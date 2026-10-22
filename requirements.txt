@@ -1,0 +1,16 @@
+# pip install -r requirements.txt     (then:  pip install -e .  from this folder)
+#
+# Core numerics
+numpy>=1.24
+scipy>=1.10
+matplotlib>=3.6
+# Twisted bilayer graphene: pybandstructure from PyPI (tested with 2.1).
+# For the optional Hartree self-consistency of doped TBG see README, "About pybandstructure".
+pybandstructure>=2.1
+tqdm
+h5py
+# Notebooks
+jupyterlab
+ipykernel
+# Tests (optional: tests/run_tests.py works without it)
+pytest

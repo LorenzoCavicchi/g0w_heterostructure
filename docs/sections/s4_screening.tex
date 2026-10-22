@@ -1,0 +1,124 @@
+% ======================================================================
+\section{Screening: polarisability, dielectric matrix and screened interaction}
+\label{sec:screening}
+% ======================================================================
+
+\subsection{Independent-particle polarisability}
+
+For a subsystem with Bloch states $\ket{n\bk}$ the layer-resolved Lindhard function is
+\begin{equation}
+\chi^0_{\ell\ell'}(\bq,\omega)=\frac{g}{A}\sum_{\bk,n,m}
+\frac{\nF(\xi_{n\bk})-\nF(\xi_{m,\bk+\bq})}{\omega+\ii\eta+\xi_{n\bk}-\xi_{m,\bk+\bq}}\;
+\rho^\ell_{nm}(\bk,\bq)\,\bigl[\rho^{\ell'}_{nm}(\bk,\bq)\bigr]^*
+\qquad[\text{nm}^{-2}\,\text{eV}^{-1}],
+\label{eq:chi0}
+\end{equation}
+the response of the density of layer $\ell$ to a potential acting on layer $\ell'$. It is negative at
+$\omega=0$ ($\chi^0\to-D(E_F)$ for $q\to0$ in a metal), retarded ($\Imm\chi^0_{\ell\ell}\le0$ for
+$\omega>0$) and, for the head ($\bG=\bG'=0$), a $2\times2$ matrix for TBG
+(\code{LayerHelpers.chi0\_block}, \code{tbg\_model.chi0\_tbg}). The degeneracy $g=4$ counts spin and valley.
+The fast kernel evaluates \cref{eq:chi0} for all $(\ell,\bG,\ell',\bG')$ at once as a matrix product over the
+transitions with $\nF(\xi_{n\bk})\neq\nF(\xi_{m\bk+\bq})$, and agrees with \texttt{pybandstructure}'s
+\code{polarization} to $3\times10^{-15}$.
+
+For graphene the $T=0$ bubble is known in closed form~\cite{Wunsch2006} (\cref{app:dirac},
+\code{dirac\_chi.chi\_dirac\_phys}); it is written with the split root $\sqrt{z-1}\sqrt{z+1}$, analytic in the upper
+half plane, and evaluated at complex $\omega+\ii\eta$. A charge-neutral tip contributes only the interband part
+$\chi^0=-\frac{g}{16}\frac{q^2}{\sqrt{(\hbar v_Fq)^2-(\omega+\ii\eta)^2}}$ (no Drude weight).
+
+\paragraph{Both valleys of TBG.}\label{sec:valleys}
+The continuum model is diagonalised for valley $K$ only; write $X(\bq)=g\chi^K(\bq)$ for the bubble
+\eqref{eq:chi0} of that valley multiplied by $g=4$. Time reversal maps valley $K$ at $\bk$ onto $K'$ at $-\bk$,
+$E_{K'}(\bk)=E_K(-\bk)$ and $u_{K'}(\bk)=u_K(-\bk)^*$; inserted in \eqref{eq:chi0} this gives
+$\chi^{K'}_{ab}(\bq)=\chi^{K}_{ba}(-\bq)$. The physical (spin $\times$ valley) response is therefore
+\begin{equation}
+\chi^0_{\rm TBG}(\bq,\omega)=\tfrac{g}{2}\bigl[\chi^K(\bq,\omega)+\chi^K(-\bq,\omega)^T\bigr]
+=\tfrac12\bigl[X(\bq,\omega)+X(-\bq,\omega)^T\bigr]
+\label{eq:valleysym}
+\end{equation}
+(\code{tbg\_model.chi0\_tbg}), as in Ref.~\cite{Wei2025}, where the RPA polarisation sums over both valleys
+related by time reversal. It satisfies the Onsager relation $\chi^0(\bq)=\chi^0(-\bq)^T$, hence $W(\bq)=W(-\bq)^T$,
+which is also what allows the frequency integral of the self-energy to be folded onto $\omega>0$
+(\cref{sec:sigma_derivation}). Both terms are needed: the bands of a single valley are not inversion symmetric,
+$E_K(\bk)\neq E_K(-\bk)$, so $X(\bq)$ alone is not time-reversal symmetric at finite $\bq$ (its long-wavelength
+static limit is valley-even). On the few Wigner--Seitz boundary points where $-\bq$ is stored as $-\bq+\bG_0$, the
+head at the stored representative is used (same $|\bq|$). The Onsager relation then holds on the whole mesh to
+round-off (notebook 03, \code{test\_valley\_symmetrized\_chi0\_is\_time\_reversal\_symmetric}).
+
+\paragraph{Block-diagonal $\chi^0$ of a stack.} For decoupled subsystems (\cref{as:decoupled})
+\begin{equation}
+\chi^0(\bq,\omega)=\begin{pmatrix}\chi^0_{\rm tip}(|\bq|,\omega)&0\\0&\chi^0_{\rm TBG}(\bq,\omega)\end{pmatrix}
+\qquad(3\times3,\ \code{screening.assemble\_chi0}).
+\end{equation}
+The tip is unstructured on the moir\'e scale: its response depends on $|\bq|$ only and has no umklapp.
+
+\subsection{Dielectric matrix and screened interaction}
+
+The total potential acting on the electrons is the external one plus the Hartree potential of the induced
+density, $\phi=\phi_{\rm ext}+V\delta n$ with $\delta n=\chi^0\phi$. Hence $\phi=\varepsilon^{-1}\phi_{\rm ext}$ with
+\begin{equation}
+\boxed{\varepsilon(\bq,\omega)=1-V(\bq,\omega)\,\chi^0(\bq,\omega)}
+\qquad\text{and}\qquad
+\boxed{W(\bq,\omega)=V+V\chi^0W=\varepsilon^{-1}(\bq,\omega)\,V(\bq,\omega)} ,
+\label{eq:epsW}
+\end{equation}
+matrices in sheet space (and in $(\ell,\bG)$ space with local fields, $V_{(\ell\bG),(\ell'\bG')}=V_{\ell\ell'}(|\bq+\bG|)\delta_{\bG\bG'}$).
+The product order matters: $V$ and $\chi^0$ do not commute, so $\varepsilon^{-1}V\ne V\varepsilon^{-1}$.
+Both $V$ and $\chi^0$ are evaluated at $\omega+\ii\eta$ with the \emph{same} $\eta$
+(\code{screening.screened\_interaction}, \code{tbg\_stack.build\_stack\_eps\_W},
+\code{slg\_stack.stack\_eps\_and\_V}): an undamped collective mode then appears in $-\Imm W$ as a Lorentzian of
+width $\simeq\eta$ that a finite frequency grid can integrate, instead of a $\delta$ function.
+
+\subsection{Spectral density, loss function and passivity}
+\label{sec:spectraldensity}
+
+$W$ is analytic in the upper half plane and its dynamical part $W-V$ decays at large $|\omega|$. Its spectral
+representation is
+\begin{equation}
+W(\bq,z)=V(\bq)+\int_{-\infty}^{\infty}\dd\nu\,\frac{S(\bq,\nu)}{z-\nu},\qquad
+S(\bq,\nu)=\frac{\ii}{2\pi}\bigl[W(\bq,\nu+\ii0)-W(\bq,\nu+\ii0)^\dagger\bigr],
+\label{eq:spectralrep}
+\end{equation}
+with $S(\bq,-\nu)=-S(-\bq,\nu)^{T}$. For a passive medium $S$ is Hermitian and positive semidefinite at $\nu>0$
+(it is the absorption of the stack). When $W$ is a symmetric matrix, as for reciprocal systems,
+$S=-\Imm W/\pi$ element by element (\code{spectral\_density\_matrix(W, hermitian=False)}). The Hermitian form is
+used by default because it makes the causality of $\Sigma$ manifest (\cref{sec:passivity}); for the stacks considered here $W$ is symmetric to
+$\lesssim10^{-10}$ and the two coincide. The \emph{loss function} of a set of sheets is
+$L(\bq,\omega)=-\Imm\Tr_{\rm sheets}W(\bq,\omega)\ge0$; its peaks locate collective modes but also inherit every
+structure of $\Imm\chi^0$, so they are a display tool, not a mode criterion.
+
+\subsection{Collective modes and plasmon-pole data}
+\label{sec:ppa}
+
+Collective modes are zeros of $\varepsilon$: they are located as prominent minima of $|\lambda_{\min}(\varepsilon(\bq,\omega))|$
+on the real axis (prominence filter against continuum ripples, \code{find\_plasmon\_poles\_at\_q}). Around each
+pole $\omega_n(\bq)$ the residue \emph{matrix} of $W$ is
+\begin{equation}
+R_n(\bq)=\int_{\omega_n-\Delta_-}^{\omega_n+\Delta_+}\dd\omega\;S(\bq,\omega),
+\label{eq:residue}
+\end{equation}
+integrated over a window of $\pm5\eta$ truncated at the mid-points between neighbouring poles and, optionally,
+on a refined local grid (\code{build\_plasmon\_pole\_data(eps\_builder=..., n\_refine=129)}). $R_n$ is Hermitian
+PSD; a window of $\pm5\eta$ captures $\frac{2}{\pi}\arctan5\simeq87\%$ of a Lorentzian. The plasmon-pole
+approximation (PPA) replaces $S(\bq,\omega)\to\sum_nR_n(\bq)\delta(\omega-\omega_n(\bq))$ for $\omega>0$. The
+fraction of $\int S$ captured by the poles measures its validity; in doped graphene above $q\simeq k_F$ and
+in TBG at small $q$ the modes are Landau damped and most of the weight is in the continuum, so the PPA is
+used only as a diagnostic and the production route is the full-frequency one.
+
+\subsection{Layer-symmetry channels}
+\label{sec:channels}
+
+For a pair of sheets $(a,b)$ write the $2\times2$ block of $W$ with $P_\pm=u_\pm u_\pm^T$,
+$u_\pm=(1,\pm1)/\sqrt2$:
+\begin{equation}
+W_{\rm block}=\underbrace{P_+WP_+}_{\text{in phase}}+\underbrace{P_-WP_-}_{\text{out of phase}}
++\underbrace{P_+WP_-+P_-WP_+}_{\text{cross}} .
+\label{eq:channels}
+\end{equation}
+This is an identity, exact and additive, and since $\Sigma$ is linear in $S$ the split carries over to the
+self-energy (\code{screening.split\_layer\_channels}, \code{slg\_self\_energy.sigma\_full\_frequency\_channels\_kernel}).
+For two equivalent sheets $u_\pm$ are exact eigenvectors of $W$ and the cross term vanishes; the in-phase and
+out-of-phase parts are the optical and acoustic plasmon channels. It is a symmetry projection, valid also where
+the modes are damped and are not poles. Whether the out-of-phase part is a second mode or the same mode
+re-weighted by geometry must be checked from the peak positions of the two channels (with an inert tip both
+peak at the same $\omega$).

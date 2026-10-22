@@ -1,0 +1,174 @@
+% ======================================================================
+\section{Quantum twisting microscope: differential conductance}
+\label{sec:qtm}
+% ======================================================================
+
+In the QTM~\cite{Inbar2023} a graphene tip is pressed onto the sample through a thin hBN barrier and rotated by
+an angle $\theta$; the tunneling current is recorded as a function of bias $V$ and $\theta$. Because tunneling
+across a clean, flat interface conserves in-plane crystal momentum, the twist selects \emph{which momentum of the
+sample} is probed, and the bias selects the energy: the $(\theta,V)$ map is a momentum- and energy-resolved
+picture of the sample spectral function~\cite{Wei2025b,Wei2025}. This section derives the expression used by
+\code{g0w.qtm} and describes the kinematics for the SLG and TBG samples.
+
+\subsection{From the tunneling Hamiltonian to $dI/dV$}
+
+\paragraph{Tunneling Hamiltonian.} Let $c_{\bk\sigma}$ annihilate a tip electron of lab momentum $\bk$ on sublattice
+$\sigma$ and $d_{\bp\sigma'}$ a top-layer electron of the sample. For a junction of area $\Omega$ much larger than
+the lattice constants, the tunneling amplitude conserves lab momentum modulo the reciprocal lattices of the two
+crystals, $\bp+\bG_S=\bk+\bG_T$ with $\bG_T=O(\theta)\bG_S$ (Ref.~\cite{Wei2025}, Eq.~(30)); $O(\theta)$ is the
+clockwise rotation $\bigl(\begin{smallmatrix}\cos\theta&\sin\theta\\-\sin\theta&\cos\theta\end{smallmatrix}\bigr)$
+(\code{qtm.rotation\_matrix}). Its Fourier components fall off on the atomic scale, so only the processes with
+$|\bk+\bG_T|\simeq|\bp+\bG_S|\simeq K=4\pi/3a$ survive: three Bragg channels $j=1,2,3$ linking the three
+equivalent corners of the two Brillouin zones. In channel $j$ the sublattice structure is
+$t^{(j)}_{\sigma\sigma'}=w\,e^{\ii(\bG^j_T\cdot\bm\tau_\sigma-\bG^j_S\cdot\bm\tau_{\sigma'})}$, and with the origin on
+an atom the representative channel $j=1$ has all phases equal to one,
+\begin{equation}
+t^{(1)}=w\begin{pmatrix}1&1\\1&1\end{pmatrix}=w\,\ket{\chi}\bra{\chi},\qquad \ket\chi=(1,1)^T .
+\label{eq:tunnelmatrix}
+\end{equation}
+For a $C_3$-symmetric sample the three channels probe $C_3$-related momenta with $C_3$-related matrix elements and
+contribute equally (factor $N_b=3$). The tip couples only to the layer it touches (the top layer of TBG):
+tunneling decays exponentially with distance.
+
+\paragraph{Current.} To lowest order in $w$ (\cref{as:qtm}) the current from tip to sample is the golden-rule
+expression
+\begin{equation}
+I=\frac{2\pi e}{\hbar}N_fN_b\sum_{\bk}\int\dd\eps\,
+\bigl[\nF(\eps-\mu_T)-\nF(\eps-\mu_S)\bigr]\,
+\Tr\bigl[t^{(1)\dagger}A_T(\bk,\eps)\,t^{(1)}A^{\rm top}_S(\bp(\bk),\eps)\bigr],
+\label{eq:current}
+\end{equation}
+with $N_f=4$ spin--valley flavours, $A_T$ the $2\times2$ (sublattice) spectral function of the tip and
+$A_S^{\rm top}$ the top-layer sublattice block of the sample spectral function at the conserved momentum
+$\bp(\bk)$. Using \cref{eq:tunnelmatrix}, the trace factorises into $w^2\bra\chi A_T\ket\chi\,\bra\chi A^{\rm top}_S\ket\chi$.
+
+\paragraph{Bias and the tip as a momentum filter.} Following Ref.~\cite{Wei2025}, (a) the tip is non-interacting
+graphene, and its chemical potential follows the bias while its band energies stay fixed relative to the sample
+Fermi level, $\partial(\xi^T+eV)/\partial V\simeq0$: the bias changes only the occupations in \cref{eq:current},
+$\mu_T=\mu_S+eV$; (b) the sample chemical potential does not move relative to the sample bands (for TBG because
+of the large flat-band density of states, for the doped SLG sample because it is fixed by its own gate);
+(c) $T=0$. Differentiating \cref{eq:current} with respect to $V$ then gives
+$dI/dV\propto\sum_{\bk}\Tr[t^{(1)\dagger}A_T(\bk,\mu_T)\,t^{(1)}A^{\rm top}_S(\bp(\bk),\mu_S+eV)]$: only tip states \emph{at the
+tip Fermi level} contribute, and they lie on the tip Fermi line around the tip Dirac point
+$\bK_\theta=O(\theta)\bK$. (d) The tip Fermi momentum is small, so that $A_S$ is constant along this line and is
+evaluated at $\bp=\bK_\theta$. What remains of the tip is
+$\sum_{\bk}\bra\chi A_T(\bk,\mu_T)\ket\chi=\Omega\,\nu_T\,\langle|\braket{\chi}{u_T}|^2\rangle=\Omega\,\nu_T$: the average of
+$|1+se^{\ii\phi}|^2/2$ over the tip Fermi line equals one, so the tip spinor disappears and only the tip density of
+states $\nu_T$ survives. The three Bragg channels do not interfere at generic (incommensurate) angles and add up
+to the factor $N_b$. The result is (Ref.~\cite{Wei2025}, Eqs.~(8) and (33))
+\begin{equation}
+\boxed{\frac{dI}{dV}(V,\theta)=e^2\Gamma\sum_{\lambda\rho}\Lambda_\lambda(\bK_\theta)\,
+A^S_{\lambda\rho}(\bK_\theta,eV)\,\Lambda_\rho(\bK_\theta)^*
+=e^2\Gamma\,\bra{\chi_\theta}A^S(eV)\ket{\chi_\theta}},
+\quad \Gamma=\tfrac{2\pi}{\hbar}w^2\Omega\,\nu_TN_bN_f
+\label{eq:didv}
+\end{equation}
+($\Gamma$ of Ref.~\cite{Wei2025}, Eq.~(8), times $N_f$), where $eV$ is measured from $\mu_S$ and is the energy axis of $A^S$ (bias and
+sample energy are the same axis: \code{eps\_values} = $eV$). The band-basis spectral function of
+\cref{eq:dyson} enters through $A^{\rm top}_S=\sum_{\lambda\rho}\ket{u^{\rm top}_\lambda}A_{\lambda\rho}\bra{u^{\rm top}_\rho}$,
+so the tunneling amplitude is the sublattice sum of the top-layer spinor of the Bloch state (Ref.~\cite{Wei2025}, Eq.~(32)),
+\begin{equation}
+\Lambda_\lambda(\bK_\theta)=\braket{\chi}{u^{\rm top}_{\lambda}(\bK_\theta)}=u^\lambda_{\bK_\theta,tA}+u^\lambda_{\bK_\theta,tB}.
+\label{eq:Lambda}
+\end{equation}
+The code returns $dI/dV/(e^2\Gamma)$ in eV$^{-1}$ and drops $\Gamma$.
+
+\paragraph{Properties.} (i) Positivity: $dI/dV=e^2\Gamma\bra{\chi_\theta}A^S\ket{\chi_\theta}\ge0$ because $A^S$ is PSD
+(\cref{sec:spectral}). (ii) Gauge invariance: under $u_\lambda\to e^{\ii\varphi_\lambda}u_\lambda$,
+$\Lambda_\lambda\to e^{\ii\varphi_\lambda}\Lambda_\lambda$ and $A_{\lambda\rho}\to e^{-\ii\varphi_\lambda}A_{\lambda\rho}e^{\ii\varphi_\rho}$,
+so \cref{eq:didv} is invariant \emph{provided $\Lambda$ and $\Sigma$ are built from the same eigenvectors}
+(\code{test\_band\_matrix\_didv\_is\_gauge\_invariant\_and\_positive}). With the band-diagonal approximation the off-diagonal terms are dropped and
+only $|\Lambda_\lambda|^2$ enters, which is gauge invariant by itself. (iii) Non-interacting limit:
+$dI/dV=\sum_\lambda|\Lambda_\lambda|^2\delta_{\eta}(eV-\xi_{\lambda\bK_\theta})$ (\code{tbg\_bare\_didv}).
+
+\paragraph{What \cref{eq:didv} leaves out.} The radius of the tip Fermi line, $k_{F,T}$, sets the momentum
+resolution, which \cref{eq:didv} treats as perfect. If the tip bands do move with the bias (a tip with fixed
+doping, whose Dirac point follows $\mu_T$), the derivative of \cref{eq:current} acquires a second term from tip
+states below the tip Fermi level, on rings $|\bk-\bK_\theta|=|\eps-E_{D,T}|/\hbar v$; it is dropped by
+assumption (a). Self-energy effects of the tip, inelastic (boson-assisted) tunneling as a separate channel, and the
+bias dependence of the electrostatics are not included: interactions enter only through the dressed sample
+spectral function (\cref{as:qtm}), whose plasmon satellites are, in this language, the inelastic features.
+At finite temperature \cref{eq:didv} is convolved with $-\partial_\eps\nF$, a bell of standard deviation
+$\pi k_BT/\sqrt3\simeq1.8k_BT$ (0.8 meV at 5 K); \code{qtm.smooth\_bias} applies a Gaussian of chosen width,
+which also mimics the lock-in modulation.
+
+\subsection{SLG sample}
+\label{sec:qtmslg}
+
+Tip and sample are both graphene with Dirac point $\bK=(K,0)$ at $\theta=0$. Measured from the sample Dirac
+point the probed momentum is (\code{qtm.slg\_probe\_momentum})
+\begin{equation}
+\bp_\theta=\bK_\theta-\bK=\bigl(O(\theta)-1\bigr)\bK,\qquad |\bp_\theta|=2K\sin\tfrac{\theta}{2}\simeq K\theta
+=0.297\ \text{nm}^{-1}\ \text{per degree},
+\label{eq:ptheta}
+\end{equation}
+almost perpendicular to $\bK$. One degree already corresponds to $1.7k_F$ at $n=10^{12}$ cm$^{-2}$. The isotropic
+cone makes $\Sigma$ diagonal in the chirality basis (\cref{sec:spectral}), and with the spinor $(1,se^{\ii\phi_{\bp}})/\sqrt2$
+\begin{equation}
+\frac{dI}{dV}=e^2\Gamma\sum_{s=\pm}|\Lambda_s(\bp_\theta)|^2A^S_s(\bp_\theta,eV),\qquad
+|\Lambda_s|^2=1+s\cos\phi_{\bp_\theta}
+\label{eq:didvslg}
+\end{equation}
+(\code{qtm.slg\_spectral\_map}, \code{slg\_didv}). Since $\phi_{\bp_\theta}\simeq-\frac{\pi}{2}-\frac{\theta}{2}$,
+$\cos\phi_{\bp_\theta}=-\sin\frac\theta2$ and the two bands are probed with nearly equal weight (difference
+$<4\%$ for $\theta<2^\circ$); \code{tunneling\_model="constant"} sets $|\Lambda_s|^2=1$ and reads $A^S$ directly.
+The map shows two quasiparticle ridges $eV=\pm\hbar v^*|\bp_\theta|-E_F$ (renormalised velocity $v^*$, \cref{sec:spectral})
+and the plasmaron satellites displaced from them. The twist sets the \emph{external} momentum $\bp_\theta$; the
+plasmon momentum is integrated over inside $\Sigma(\bp_\theta,\eps)$ and must not be confused with $\bp_\theta$.
+The angle can be converted to momentum and back with \code{qtm.twist\_to\_momentum} and \code{momentum\_to\_twist}.
+
+\subsection{TBG sample}
+\label{sec:qtmtbg}
+
+\paragraph{Kinematics.} Now $\theta$ is the twist between the tip and the \emph{top} layer of TBG, and the tip couples
+to the top-layer plane-wave components. A top-layer plane wave $\bk+\bG$ of the continuum model carries the lab momentum
+$\bk+\bG+\bm\Gamma^{\rm lab}$ (\cref{eq:labframe}). Momentum conservation with the tip Dirac point
+$\bK^{\rm lab}_\theta=O(\theta)\bK^{\rm lab}_{\rm top}$ then fixes the extended-zone model momentum
+\begin{equation}
+\boxed{\bk_\theta=O(\theta)\,\bK^{\rm lab}_{\rm top}-\bm\Gamma^{\rm lab}}\qquad(\code{qtm.tbg\_tip\_momentum}),
+\label{eq:ktheta}
+\end{equation}
+which passes through
+\begin{equation}
+\theta=0:\ \bk_\theta=\bK_1\ (\kappa_{\rm top}),\qquad
+\theta=\theta_{\rm TBG}:\ \bk_\theta=\bK_2\ (\kappa_{\rm bot}),\qquad
+\theta=-\theta_{\rm TBG}:\ \bk_\theta\simeq2\bK_1-\bK_2\ (\gamma'),
+\end{equation}
+the first two exactly (both Dirac points lie on the circle $|\bk+\bm\Gamma^{\rm lab}|=K$ swept by the tip), the last to
+$O(\theta^2)$: it is the $\gamma$ point of a neighbouring moir\'e zone ($|2\bK_1-\bK_2|=|\bG_M|$), missed by $0.6\%$ at
+$1.2^\circ$. To $O(\theta^2)$ the trajectory is a straight line through $\kappa_{\rm top}$ along $\bK_2-\bK_1$ traversed at $K$ per radian, i.e.\ one
+side $|\bK_1-\bK_2|=|\bG_M|/\sqrt3$ of the moir\'e hexagon per $\theta_{\rm TBG}$. Physically: when the tip is
+aligned with the top layer it probes the top-layer Dirac point, when it is aligned with the bottom layer the
+bottom one.
+
+\paragraph{Folding and unfolding.} The band structure lives on the mesh of the first moir\'e zone, so
+$\bk_\theta$ is decomposed as $\bk_\theta=\bk+\bG$ with $\bk$ the nearest mesh point and $\bG$ a moir\'e vector
+(\code{tbg\_model.fold\_to\_mesh}; the snapping error is reported and is at most $1/\sqrt3$ of a mesh spacing).
+The spectral function $A^S_{\lambda\rho}(\bk,eV)$ is evaluated at the folded $\bk$, but the tunneling amplitude
+is the \emph{unfolded} plane-wave component,
+\begin{equation}
+\Lambda_\lambda(\bk_\theta)=u^\lambda_{\bk}[4g+0]+u^\lambda_{\bk}[4g+1],\qquad g=\text{index of }\bG
+\label{eq:Lambdatbg}
+\end{equation}
+(\code{qtm.tbg\_tunneling\_amplitudes}; zero if $\bk+\bG$ lies outside the plane-wave cutoff). This is what makes the
+QTM an extended-zone probe: the same folded state $\bk$ is seen with different weights at $\bk_\theta=\bk+\bG$ for
+different $\bG$, and a band that is mostly bottom-layer at $\bk_\theta$ is invisible to the tip. $|\Lambda_\lambda|^2$
+is not the top-layer weight: it is the coherent sublattice sum of one plane-wave component, and it varies by
+orders of magnitude between bands at the same $\bk$.
+
+\paragraph{Validation.} With the interlayer hopping switched off, the top layer is a Dirac cone centred at
+$\kappa_{\rm top}$ in the extended zone, and the bare conductance must follow $eV=\pm\hbar v\,2K\sin(\theta/2)$ for every
+$\theta$, also outside the first moir\'e zone. The kinematics of \cref{eq:ktheta} with the unfolded amplitude
+reproduces it (\code{test\_decoupled\_layers\_follow\_the\_extended\_zone\_dirac\_cone}, notebook 05, Sec.~2).
+
+\paragraph{Interband terms and gauge.} The band-diagonal approximation (\code{band\_diagonal=True}) keeps only
+$\Sigma_{\lambda\lambda}$ and then only $|\Lambda_\lambda|^2$ enters; it is accurate where bands are separated by more than
+$|\Sigma|$ and fails inside the flat-band manifold and at band crossings. With the full band matrix the eigenvectors
+that build $\Lambda$ must be those that build $\Sigma_{\lambda\rho}$ (the stored \code{band\_structure.wavefunctions}): a
+separate diagonalisation would assign independent phases to the two and spoil the gauge invariance of
+\cref{eq:didv}.
+
+\paragraph{Second derivative.} Peaks of $A^S$ appear as peaks of $dI/dV$; their edges, and steps from the onset of
+a decay channel, are sharpened in $d^2I/dV^2$, which changes sign at every maximum of $dI/dV$
+(\code{qtm.bias\_derivative}, after \code{smooth\_bias}). It is the quantity usually shown for weak inelastic
+features, here the plasmon satellites.

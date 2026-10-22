@@ -1,0 +1,63 @@
+% ======================================================================
+\section{Dyson equation and spectral function}
+\label{sec:spectral}
+% ======================================================================
+
+\subsection{Green's function and spectral function}
+
+With the bare propagator $G^0(\bk,\eps)=\sum_n\ket{n\bk}\bra{n\bk}/(\eps+\ii\eta_{\rm qp}-\xi_{n\bk})$ and the
+self-energy matrix of \cref{eq:sigma}, the Dyson equation $G=G^0+G^0\Sigma G$ restricted to a set of $n_b$
+bands reads (Ref.~\cite{Wei2025}, Eq.~(50))
+\begin{equation}
+G(\bk,\eps)=\bigl[(\eps+\ii\eta_{\rm qp})\,\mathbb 1-\diag(\xi_{n\bk})-\Sigma(\bk,\eps)\bigr]^{-1},
+\qquad
+A(\bk,\eps)=\frac{\ii}{2\pi}\bigl[G(\bk,\eps)-G(\bk,\eps)^\dagger\bigr]
+\label{eq:dyson}
+\end{equation}
+(\code{spectral.green\_function\_matrix}, \code{spectral\_function\_matrix}). $A$ is Hermitian and positive
+semidefinite whenever $(\Sigma-\Sigma^\dagger)/2\ii\preceq0$ (\cref{sec:passivity}), because
+$A=\frac1\pi G\,\Gamma\,G^\dagger$ with $\Gamma=\eta_{\rm qp}\mathbb1-(\Sigma-\Sigma^\dagger)/2\ii\succeq0$. Its trace
+obeys $\int\dd\eps\,\Tr A=n_b$ (checked to $10^{-3}$ for $\Sigma=0$, \code{test\_spectral\_function\_normalised\_without\_interactions}).
+If $\Sigma$ is diagonal (band-diagonal approximation, or exactly for isotropic graphene, where the chirality
+structure makes $\Sigma$ diagonal in the band basis) this reduces to
+\begin{equation}
+A_n(\bk,\eps)=-\frac1\pi\Imm\frac{1}{\eps-\xi_{n\bk}-\Sigma_{nn}(\bk,\eps)+\ii\eta_{\rm qp}}
+=\frac1\pi\,\frac{\eta_{\rm qp}-\Imm\Sigma_{nn}}{(\eps-\xi_{n\bk}-\Ree\Sigma_{nn})^2+(\eta_{\rm qp}-\Imm\Sigma_{nn})^2}
+\label{eq:Ascalar}
+\end{equation}
+(\code{spectral.spectral\_function\_scalar}, \code{slg\_self\_energy.spectral\_function\_sample}). The band-off-diagonal
+elements matter where two bands are close compared with $|\Sigma|$, e.g.\ inside the flat-band manifold of TBG,
+where $\|\Sigma_{\rm off}\|/\|\Sigma_{\rm diag}\|\simeq0.3$ at $\kappa_{\rm top}$ (notebook 03). Within an exactly
+degenerate pair of bands the split into diagonal and off-diagonal parts depends on the gauge, and only the
+matrix (or a gauge-invariant contraction such as \cref{eq:didv}) is meaningful.
+
+\subsection{Reading the spectral function}
+
+\paragraph{Quasiparticle peak.} Near the solution $E^*_{n\bk}$ of
+\begin{equation}
+E^*-\xi_{n\bk}-\Ree\Sigma_{nn}(\bk,E^*)=0
+\end{equation}
+$A$ is a Lorentzian of weight and width
+\begin{equation}
+Z=\bigl[1-\partial_\eps\Ree\Sigma_{nn}\bigr]^{-1}_{E^*},\qquad \Gamma=2Z\bigl(\eta_{\rm qp}-\Imm\Sigma_{nn}(E^*)\bigr)
+\end{equation}
+(\code{spectral.quasiparticle\_solution}). The peak does not sit at the bare band: $\Ree\Sigma$ displaces it, and
+the missing weight $1-Z$ is transferred to the incoherent part and to the satellites.
+
+\paragraph{Satellites.} Away from the quasiparticle pole, to first order in $\Sigma$ (Ref.~\cite{Wei2025}, Eq.~(34)),
+\begin{equation}
+A_{\lambda_1\lambda_2}(\bk,\eps)\simeq-\frac1\pi\frac{\Sigma''_{\lambda_1\lambda_2}(\bk,\eps)}{(\eps-\xi_{\lambda_1\bk})(\eps-\xi_{\lambda_2\bk})},
+\qquad \Sigma''=\frac{\Sigma-\Sigma^\dagger}{2\ii},
+\end{equation}
+so peaks of $-\Imm\Sigma$ produce satellites. From \cref{eq:sigma}, $-\Imm\Sigma$ is large where an electron at
+$\eps$ can emit a boson: $\eps=\xi_{m\bk+\bq}+\omega$ with $S(\bq,\omega)$ large. A dispersionless mode of energy
+$\omega_0$ (the flat-band plasmon of TBG) therefore gives a satellite at $\eps\simeq\xi_{\rm VH}+\omega_0$ where the
+intermediate density of states peaks ($\xi_{\rm VH}$ the van Hove energy of the flat band), nearly independent of
+$\bk$. For a dispersive mode (the $\sqrt q$ plasmon of graphene) the satellite sits at $\eps=\xi_{\bk-\bq}+\omega_{\bq}$
+summed over $\bq$; since $\xi_{\bk-\bq}\ne\xi_{\bk}$, its offset from the quasiparticle peak is not the plasmon
+energy at any single $\bq$, and reading off $\omega_{\rm pl}$ from it requires the calculation. For one-boson
+emission the satellite lies on the side of the quasiparticle peak away from $E_F$ (above it for empty states,
+below it for occupied ones).
+
+\paragraph{Fermi-liquid region.} At $\eps\to0$, $-\Imm\Sigma\propto\eps^2$; on a numerical grid this is floored
+by $\eta_\Sigma$ and by the finite $q$ mesh, so the region $|\eps|\lesssim20\eta_\Sigma$ is not physical.

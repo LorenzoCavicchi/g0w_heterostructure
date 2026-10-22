@@ -1,0 +1,92 @@
+% ======================================================================
+\section{Polarisability of doped graphene in closed form}
+\label{app:dirac}
+% ======================================================================
+
+At $T=0$ and electron density $n$ ($k_F=\sqrt{4\pi n/g}$), with $D_\pm=(\omega/\hbar v_F\pm2k_F)/q$ and
+$s=\sqrt{\omega^2-(\hbar v_Fq)^2}$ (principal root), the retarded bubble of \cref{eq:chi0} for one sheet
+is~\cite{Wunsch2006}
+\begin{gather}
+\chi^0(q,\omega)=-\frac{g}{16\pi}\Bigl[\frac{8k_F}{\hbar v_F}+\frac{q^2}{s}\bigl(\mathcal G(D_-)+\ii\pi-\mathcal G(D_+)\bigr)\Bigr],\nonumber\\
+\mathcal G(z)=z\sqrt{z-1}\sqrt{z+1}-\log\bigl(z+\sqrt{z-1}\sqrt{z+1}\bigr)
+\end{gather}
+(\code{dirac\_chi.chi\_dirac\_phys}). The split root makes $\mathcal G$ analytic on $\mathbb C\setminus[-1,1]$, which is the
+cut structure of the retarded response, so the same expression is valid at real $\omega+\ii0$ and at complex
+$\omega+\ii\eta$. The original implementation switched between $\mathcal G(-D_-)$ and $\mathcal G(D_-)+\ii\pi$ with a
+real-axis criterion; the two are the same analytic function in the upper half plane (agreement $3\times10^{-14}$),
+and the switch is kept only as \code{chi\_dirac\_branch\_switched\_reference}. Limits: $\chi^0(q\to0,0)=-D(E_F)$
+with $D(E_F)=gk_F/(2\pi\hbar v_F)$; for $\omega\ll\hbar v_Fq$ and $q\ll k_F$ the static Thomas--Fermi form; for $q\ll k_F$
+and $\omega\gg\hbar v_Fq$ the Drude form $\chi^0\simeq D(E_F)\,(\hbar v_Fq)^2/2\omega^2$, which with
+$V=2\pi e^2/\bar\varepsilon q$ gives the optical plasmon
+$\omega_{\rm pl}^2=\frac{g}{2}\frac{e^2}{\bar\varepsilon}E_Fq$ (\code{test\_optical\_plasmon\_long\_wavelength\_law}).
+The intrinsic (undoped) part $\chi^0=-\frac{g}{16}q^2/\sqrt{(\hbar v_Fq)^2-\omega^2}$ is used for a neutral tip.
+
+% ======================================================================
+\section{Changes with respect to the original scripts}
+\label{app:changes}
+% ======================================================================
+
+Every physics change keeps the previous behaviour available behind an explicit switch, so earlier results can
+be reproduced.
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{4.2cm}X>{\raggedright\arraybackslash}p{3.6cm}}
+\toprule
+change & reason & old behaviour\\
+\midrule
+\multicolumn{3}{l}{\emph{Physics}}\\
+valley-symmetrised $\chi^0_{\rm TBG}$, \cref{eq:valleysym} & single-valley $\times4$ breaks time reversal, $W(\bq)\ne W(-\bq)^T$; affects loss and $\Sigma$ at the 10--60\% level & \code{chi0\_tbg(valley\_symmetrize=False)}\\
+TBG tip trajectory $\bk_\theta=O(\theta)\bK^{\rm lab}_{\rm top}-\bm\Gamma^{\rm lab}$, \cref{eq:ktheta} & the old $(O(\theta)-1)\bK_{\rm top}$ is shifted by $-\bK_1$: $\theta=0$ probed $\gamma$ instead of $\kappa_{\rm top}$ & \code{tbg\_trajectory(legacy=True)}\\
+unfolded tunneling amplitude, \cref{eq:Lambdatbg} & $\Lambda$ must use the plane wave $\bG$ with $\bk+\bG=\bk_\theta$, not $\bG=0$ & \code{legacy\_amplitude=True}\\
+band-matrix $\Sigma_{\lambda\rho}$ and $A_{\lambda\rho}$ (Ref.~\cite{Wei2025}, Eqs.~(34),(50)) & interband coherence inside the flat-band manifold; gauge-consistent $\Lambda$ and $\Sigma$ & \code{band\_diagonal=True}\\
+Hermitian spectral density $S=\ii(W-W^\dagger)/2\pi$ & manifestly passive $\Sigma$; identical for symmetric $W$ & \code{hermitian=False}\\
+advanced branch of \code{dielectric\_function\_layer} & \code{retarded=False} returned the retarded result (the conjugation was a no-op) & --\\
+contour index of the serial $\chi^0$ loop & with a $q$ contour and no \texttt{joblib} the loop used the first $n_q$ mesh points instead of the contour points & \code{legacy\_contour\_indexing=True}\\
+\midrule
+\multicolumn{3}{l}{\emph{Kept, now tested}}\\
+$(\ell,\bG)$ flattening of $\varepsilon$ and $V$ & already consistent in v2.7; regression test added & --\\
+no degeneracy factor in $w_{\bq}$ (\cref{sec:degeneracy}) & a factor $g$ there makes $\Sigma$ four times too large (early fork) & --\\
+\midrule
+\multicolumn{3}{l}{\emph{Numerics and compatibility}}\\
+\code{\_scalar\_coth\_csch} in the tridiagonal builder & NumPy $\ge2$ refuses to assign one-element arrays to scalars & --\\
+\code{compat.trapezoid}, NumPy alias restore, \code{eigh(eigvals=)} shim & \code{np.trapz} removed, \texttt{pybandstructure} uses old SciPy/NumPy names & --\\
+per-$\bk$ extraction of \code{densityL} & fancy indexing copied the whole array for every $\bq$ (an $N_s=18$ run did not finish in 17 min; now $\simeq1$ s per $\bk$) & --\\
+self-test C of \code{layer\_coulomb} & absolute tolerance unreachable; relative $10^{-6}$ & --\\
+Hartree SCF, \code{apply\_hartree} & ported from \code{test\_TBG/notebook.ipynb}; SCF on a separate regularised copy; reproduces the reference solution & --\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\paragraph{Consequences for earlier results.} (i) Loss functions and self-energies of TBG computed with the
+single-valley $\chi^0$ (including \code{tbg\_hbn\_encapsulated\_loss}) are not time-reversal symmetric; the
+long-wavelength static response is unaffected, finite-$\bq$ dynamics change. (ii) QTM maps of TBG from
+\code{tbg\_qtm.py} probe a momentum shifted by $-\bK_1$ with the $\bG=0$ amplitude; features cannot be assigned to
+$\kappa$ points of the physical trajectory. (iii) SLG results are unchanged apart from the numerical fixes.
+
+% ======================================================================
+\section{Code map}
+\label{app:codemap}
+% ======================================================================
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{6.4cm}X}
+\toprule
+original file (\code{layer\_resolved/}\dots) & package module\\
+\midrule
+\code{test\_v2\_7/layer\_coulomb\_v2\_7.py}; \code{tbg\_hbn\_encapsulated\_loss} (capped slab) & \code{g0w/layer\_coulomb.py}\\
+\code{test\_v2\_7/Layer\_Helpers\_plasmons\_v2\_7.py}; fast $\chi^0$ from \code{tbg\_hbn\_encapsulated\_loss} & \code{g0w/layer\_helpers.py}, \code{g0w/dielectrics.py}\\
+\code{test\_v2\_7/self\_energy\_plasmon\_pole.py} & \code{g0w/self\_energy\_ppa.py}\\
+\code{test\_v2\_7/self\_energy\_full\_frequency.py} & \code{g0w/self\_energy\_full\_frequency.py}\\
+\code{test\_v2\_7/spectral\_function\_tools.py} & \code{g0w/spectral.py}\\
+\code{test\_SLG\_hBN\_SLG/chi\_dirac.py}, \code{test\_v2\_7/massless\_dirac\_fermions.py} & \code{g0w/models/dirac\_chi.py}\\
+\code{test\_SLG\_hBN\_SLG/slg\_stack.py}, \code{slg\_self\_energy.py} & \code{g0w/models/slg\_stack.py}, \code{slg\_self\_energy.py}\\
+\code{test\_TBG\_hBN\_SLG/tbg\_sample.py}, \code{test\_TBG/notebook.ipynb} (Hartree) & \code{g0w/models/tbg\_model.py}\\
+\code{test\_TBG\_hBN\_SLG/tbg\_slg\_stack.py}, \code{tbg\_self\_energy.py} & \code{g0w/models/tbg\_stack.py}, \code{tbg\_self\_energy.py}\\
+\code{test\_SLG\_hBN\_SLG/slg\_qtm.py}, \code{test\_TBG\_hBN\_SLG/tbg\_qtm.py} & \code{g0w/qtm.py}\\
+\code{test\_TBG\_hBN\_SLG/pb\_compat.py} & \code{g0w/compat.py}\\
+-- (new) & \code{g0w/screening.py}, \code{g0w/constants.py}\\
+\bottomrule
+\end{tabularx}
+\end{center}

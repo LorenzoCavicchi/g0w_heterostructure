@@ -1,0 +1,22 @@
+% ======================================================================
+\section{Polarisability of doped graphene in closed form}
+\label{app:dirac}
+% ======================================================================
+
+At $T=0$ and electron density $n$ ($k_F=\sqrt{4\pi n/g}$), with $D_\pm=(\omega/\hbar v_F\pm2k_F)/q$ and
+$s=\sqrt{\omega^2-(\hbar v_Fq)^2}$ (principal root), the retarded bubble of \cref{eq:chi0} for one sheet
+is~\cite{Wunsch2006}
+\begin{gather}
+\chi^0(q,\omega)=-\frac{g}{16\pi}\Bigl[\frac{8k_F}{\hbar v_F}+\frac{q^2}{s}\bigl(\mathcal G(D_-)+\ii\pi-\mathcal G(D_+)\bigr)\Bigr],\nonumber\\
+\mathcal G(z)=z\sqrt{z-1}\sqrt{z+1}-\log\bigl(z+\sqrt{z-1}\sqrt{z+1}\bigr)
+\end{gather}
+(\code{dirac\_chi.chi\_dirac\_phys}). The split root makes $\mathcal G$ analytic on $\mathbb C\setminus[-1,1]$, which is the
+cut structure of the retarded response, so the same expression is valid at real $\omega+\ii0$ and at complex
+$\omega+\ii\eta$. No branch switch is needed: $\mathcal G(-z)=\mathcal G(z)+\ii\pi$ in the upper half plane, so the
+two forms $\mathcal G(-D_-)$ and $\mathcal G(D_-)+\ii\pi$ that appear in the literature are the same analytic function
+there (checked to $3\times10^{-14}$). Limits: $\chi^0(q\to0,0)=-D(E_F)$
+with $D(E_F)=gk_F/(2\pi\hbar v_F)$; for $\omega\ll\hbar v_Fq$ and $q\ll k_F$ the static Thomas--Fermi form; for $q\ll k_F$
+and $\omega\gg\hbar v_Fq$ the Drude form $\chi^0\simeq D(E_F)\,(\hbar v_Fq)^2/2\omega^2$, which with
+$V=2\pi e^2/\bar\varepsilon q$ gives the optical plasmon
+$\omega_{\rm pl}^2=\frac{g}{2}\frac{e^2}{\bar\varepsilon}E_Fq$ (\code{test\_optical\_plasmon\_long\_wavelength\_law}).
+The intrinsic (undoped) part $\chi^0=-\frac{g}{16}q^2/\sqrt{(\hbar v_Fq)^2-\omega^2}$ is used for a neutral tip.

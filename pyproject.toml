@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "g0w-heterostructure"
+version = "1.0.0"
+description = "Layer-resolved G0W self-energy, spectral function and quantum-twisting-microscope conductance of van der Waals heterostructures"
+readme = "README.md"
+authors = [
+    { name = "Lorenzo Cavicchi", email = "lcavicch@sissa.it" },
+]
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "matplotlib>=3.6",
+]
+
+[project.optional-dependencies]
+# Twisted bilayer graphene: the continuum model is built with pybandstructure (PyPI, tested with 2.1).
+tbg = [
+    "pybandstructure>=2.1",
+    "tqdm",
+    "h5py",
+]
+notebooks = [
+    "jupyterlab",
+    "ipykernel",
+]
+test = [
+    "pytest",
+]
+
+[tool.setuptools]
+packages = ["g0w", "g0w.models"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

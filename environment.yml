@@ -1,0 +1,22 @@
+# conda env create -f environment.yml
+# conda activate g0w
+#
+# Creates the environment and installs pybandstructure from PyPI (tested with 2.1) together
+# with this package in editable mode.  Run it from this folder.
+name: g0w
+channels:
+  - conda-forge
+dependencies:
+  - python=3.13
+  - numpy>=1.24
+  - scipy>=1.10
+  - matplotlib>=3.6
+  - tqdm
+  - h5py
+  - jupyterlab
+  - ipykernel
+  - pytest
+  - pip
+  - pip:
+      - pybandstructure>=2.1
+      - -e .

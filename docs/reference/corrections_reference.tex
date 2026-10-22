@@ -1,0 +1,113 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.3cm]{geometry}
+\IfFileExists{lmodern.sty}{\usepackage[T1]{fontenc}\usepackage{lmodern}}{}
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+\usepackage{booktabs,array,tabularx}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,decorations.pathmorphing}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage{hyperref}
+\usepackage{cleveref}
+
+\hypersetup{colorlinks=true,linkcolor=blue!55!black,citecolor=blue!55!black,urlcolor=blue!55!black}
+\setlist{itemsep=2pt,topsep=4pt}
+
+% ------------------------------------------------------------------ macros
+\newcommand{\bq}{\bm q}
+\newcommand{\bk}{\bm k}
+\newcommand{\bp}{\bm p}
+\newcommand{\bG}{\bm G}
+\newcommand{\bK}{\bm K}
+\newcommand{\br}{\bm r}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\ii}{\mathrm i}
+\newcommand{\dd}{\mathrm d}
+\newcommand{\Tr}{\operatorname{Tr}}
+\newcommand{\Ree}{\operatorname{Re}}
+\newcommand{\Imm}{\operatorname{Im}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\csch}{\operatorname{csch}}
+\newcommand{\nF}{n_{\rm F}}
+\newcommand{\nB}{n_{\rm B}}
+\newcommand{\SigR}{\Sigma^{\rm R}}
+\newcommand{\WR}{W^{\rm R}}
+\newcommand{\ket}[1]{|#1\rangle}
+\newcommand{\bra}[1]{\langle #1|}
+\newcommand{\braket}[2]{\langle #1|#2\rangle}
+\newcommand{\codeinner}[1]{\begingroup\small\ttfamily\def\_{\textunderscore\allowbreak}#1\endgroup}
+\newcommand{\code}[1]{\ifmmode\text{\codeinner{#1}}\else\codeinner{#1}\fi}
+\emergencystretch=3em
+\newcommand{\dsum}{\textstyle\sum}
+
+\newtheorem{assumption}{Assumption}
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+\title{\textbf{Corrections and validation record}\\[4pt]
+\large What was not working in the original \texttt{layer\_resolved} scripts, what was changed in
+\texttt{g0w\_heterostructure}, and how the old and new results compare}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+These notes document, in a self-contained way, the physics and the numerics implemented in the
+\texttt{g0w} package: the layer-resolved Coulomb kernel of $N$ two-dimensional sheets in a stratified,
+possibly gated and dispersive dielectric; the random-phase-approximation (RPA) dielectric matrix and
+screened interaction of a stack of decoupled electronic subsystems; the one-shot G$_0$W
+(correlation) self-energy in the full-frequency and plasmon-pole forms, including its band-matrix
+generalisation for multiband samples; the Dyson equation and the electronic spectral function; and the
+differential conductance of a quantum twisting microscope (QTM) in the limit of a monolayer-graphene tip
+with a small Fermi surface. Two samples are worked out in detail: doped monolayer graphene
+(SLG\,$|$\,hBN\,$|$\,SLG) and twisted bilayer graphene (SLG tip\,$|$\,hBN\,$|$\,TBG). Every equation is
+followed by the name of the function that implements it, every approximation is listed explicitly, and
+the corrections made with respect to the original working scripts are collected in \cref{app:changes}.
+\end{abstract}
+
+\begin{center}
+\fbox{\parbox{0.92\textwidth}{\small\textbf{About this document.} This is the development record of the package,
+kept as a reference. Besides the theory, it compares the package with the original scripts in
+\texttt{layer\_resolved/} (\texttt{test\_v2\_7}, \texttt{test\_SLG\_hBN\_SLG}, \texttt{test\_TBG\_hBN\_SLG}, \texttt{test\_TBG}):
+\cref{app:changes} lists every correction with its reason and the switch that restores the old behaviour, and
+\cref{sec:valleys,sec:qtmtbg,sec:resqtmtbg} show old and new results side by side. The self-contained notes,
+without these remarks, are \texttt{docs/notes.pdf}.}}
+\end{center}
+
+\tableofcontents
+\newpage
+
+\input{sections/s1_overview}
+\input{sections/s2_electrostatics}
+\input{sections/s3_models}
+\input{sections/s4_screening}
+\input{sections/s5_selfenergy}
+\input{sections/s6_spectral}
+\input{sections/s7_qtm}
+\input{sections/s9_results}
+\input{sections/s8_numerics}
+\appendix
+\input{sections/a_appendices}
+
+\begin{thebibliography}{99}
+\bibitem{Wei2025} N.~Wei, F.~Guinea, F.~von Oppen, and L.~I.~Glazman, \emph{Theory of plasmon spectroscopy with the quantum twisting microscope}, Phys.~Rev.~B \textbf{112}, 155157 (2025).
+\bibitem{Wei2025b} N.~Wei, F.~von Oppen, and L.~I.~Glazman, \emph{Dirac-point spectroscopy of flat-band systems with the quantum twisting microscope}, Phys.~Rev.~B \textbf{111}, 085128 (2025).
+\bibitem{Inbar2023} A.~Inbar \emph{et al.}, \emph{The quantum twisting microscope}, Nature \textbf{614}, 682 (2023).
+\bibitem{BM2011} R.~Bistritzer and A.~H.~MacDonald, \emph{Moir\'e bands in twisted double-layer graphene}, PNAS \textbf{108}, 12233 (2011).
+\bibitem{Koshino2018} M.~Koshino \emph{et al.}, \emph{Maximally localized Wannier orbitals and the extended Hubbard model for twisted bilayer graphene}, Phys.~Rev.~X \textbf{8}, 031087 (2018).
+\bibitem{Novelli2020} P.~Novelli, I.~Torre, F.~H.~L.~Koppens, F.~Taddei, and M.~Polini, \emph{Optical and plasmonic properties of twisted bilayer graphene: impact of interlayer tunneling asymmetry and ground-state charge inhomogeneity}, Phys.~Rev.~B \textbf{102}, 125403 (2020) [\texttt{pybandstructure}].
+\bibitem{Cavicchi2024} L.~Cavicchi, I.~Torre, P.~Jarillo-Herrero, F.~H.~L.~Koppens, and M.~Polini, \emph{Theory of intrinsic acoustic plasmons in twisted bilayer graphene}, Phys.~Rev.~B \textbf{110}, 045431 (2024).
+\bibitem{Wunsch2006} B.~Wunsch, T.~Stauber, F.~Sols, and F.~Guinea, \emph{Dynamical polarization of graphene at finite doping}, New J.~Phys.~\textbf{8}, 318 (2006); E.~H.~Hwang and S.~Das Sarma, Phys.~Rev.~B \textbf{75}, 205418 (2007).
+\bibitem{Mahan} G.~D.~Mahan, \emph{Many-Particle Physics}, 3rd ed.\ (Kluwer, 2000); G.~Giuliani and G.~Vignale, \emph{Quantum Theory of the Electron Liquid} (Cambridge, 2005).
+\bibitem{Hedin1965} L.~Hedin, \emph{New method for calculating the one-particle Green's function with application to the electron-gas problem}, Phys.~Rev.~\textbf{139}, A796 (1965).
+\bibitem{Polini2008} M.~Polini, R.~Asgari, G.~Borghi, Y.~Barlas, T.~Pereg-Barnea, and A.~H.~MacDonald, \emph{Plasmons and the spectral function of graphene}, Phys.~Rev.~B \textbf{77}, 081411(R) (2008).
+\bibitem{Elias2011} D.~C.~Elias \emph{et al.}, \emph{Dirac cones reshaped by interaction effects in suspended graphene}, Nat.~Phys.~\textbf{7}, 701 (2011).
+\end{thebibliography}
+
+\end{document}

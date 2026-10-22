@@ -1,0 +1,100 @@
+% ======================================================================
+\section{Electronic models}
+\label{sec:models}
+% ======================================================================
+
+\subsection{Doped monolayer graphene}
+\label{sec:slgmodel}
+
+Near one Dirac point, $h(\bp)=\hbar v_F(\tau p_x\sigma_x+p_y\sigma_y)$ with $\bp$ measured from the Dirac
+point, $\hbar v_F=0.658$ eV\,nm ($v_F=10^6$ m/s) and $g=g_sg_v=4$. The bands and spinors are
+\begin{equation}
+\xi^s_{\bp}=s\hbar v_F|\bp|-E_F,\qquad u^s_{\bp}=\tfrac{1}{\sqrt2}(1,\,s\,e^{\ii\phi_{\bp}}),\qquad s=\pm1,
+\end{equation}
+with $k_F=\sqrt{4\pi n/g}$ and $E_F=\hbar v_Fk_F$ ($n=10^{12}$ cm$^{-2}$ $\Rightarrow$ $k_F=0.1772$ nm$^{-1}$,
+$E_F=116.6$ meV). The overlap that dresses every Coulomb vertex is the chirality factor
+\begin{equation}
+F^{s's}(\bp,\bp')=|\braket{u^{s'}_{\bp}}{u^{s}_{\bp'}}|^2=\tfrac12\bigl[1+ss'\cos\angle(\bp,\bp')\bigr],
+\qquad \textstyle\sum_sF^{s's}=1,
+\label{eq:chirality}
+\end{equation}
+which forbids intraband backscattering and interband forward scattering
+(\code{slg\_self\_energy.make\_dirac\_form\_factor}). The sample has only one sheet, so the layer-projected
+form factor is $\rho^\ell=\delta_{\ell S}\braket{u}{u'}$: a sample electron has no intermediate state in the tip.
+
+\subsection{Twisted bilayer graphene: continuum model}
+\label{sec:tbgmodel}
+
+\paragraph{Hamiltonian.} One valley ($\tau=+$) of the Bistritzer--MacDonald model in the form of
+Koshino \emph{et al.}~\cite{BM2011,Koshino2018} as implemented in \texttt{pybandstructure}
+(\code{koshino}). In the basis of plane waves $\bk+\bG$ ($\bG$ in the moir\'e reciprocal lattice,
+$|\bG|\le G_{\max}|\bG_M|$, $G_{\max}=3$, i.e.\ 37 shells) and of the four orbitals
+$(\ell,\sigma)\in\{t,b\}\times\{A,B\}$,
+\begin{gather}
+H_{\bG\bG'}(\bk)=\delta_{\bG\bG'}
+\begin{pmatrix}h_t(\bk+\bG)&0\\0&h_b(\bk+\bG)\end{pmatrix}
++\sum_{j=1}^3\Bigl[\delta_{\bG-\bG',\bm g_j}\begin{pmatrix}0&T_j\\0&0\end{pmatrix}+{\rm h.c.}\Bigr],
+\nonumber\\
+h_\ell(\bk)=\hbar v\,\bigl[R_\ell(\bk-\bK_\ell)\bigr]\cdot(\tau\sigma_x,-\sigma_y),
+\end{gather}
+where $R_{t,b}=O(\pm\theta_{\rm TBG}/2)$, $\bK_{1,2}=\frac{|\bG_M|}{\sqrt3}(-\frac{\sqrt3}{2},\pm\frac12)$ are the
+moir\'e $\kappa$ points at which the top ($1$) and bottom ($2$) Dirac cones sit, $\bm g_j\in\{0,\bm b_1,\bm b_2\}$
+and $T_j=u_{AA}\sigma_0+u_{AB}(\ldots)$ are the three interlayer hoppings with
+$|\bG_M|=8\pi\sin(\theta_{\rm TBG}/2)/(\sqrt3a)$, $a=0.246$ nm. Parameters (Ref.~\cite{Wei2025}):
+$\theta_{\rm TBG}=1.20^\circ$, $u_{AB}=117$ meV, $u_{AA}=0.7u_{AB}$, $\hbar v=0.657$ eV\,nm, so that
+$\alpha=u_{AB}/(\hbar vk_\theta)=0.56$ and the two central bands are 24--25 meV wide and separated from the
+remote bands by $\approx44$ meV. Only the $2n_b=8$ bands closest to neutrality are computed
+(\code{TBGParams.n\_bands}$=4$). The electrostatic environment differs from Ref.~\cite{Wei2025}, which uses an
+isotropic background $\varepsilon_r=10$: here the TBG sits in anisotropic hBN,
+$(\varepsilon_\parallel,\varepsilon_z)=(6.41,3)$, with vacuum between its layers (\code{TBGSLGConfig.eps\_par},
+\code{eps\_z}, \code{eps\_interlayer}), so plasmon energies are not expected to coincide with that reference.
+
+\paragraph{Model frame vs lab frame.} The model momentum $\bk$ is measured from the moir\'e $\gamma$ point.
+The graphene (lab) momentum of the plane wave $\bk+\bG$ in either layer is
+\begin{equation}
+\bp=\bk+\bG+\bm\Gamma^{\rm lab},\qquad \bK^{\rm lab}_{\rm top}=\bm\Gamma^{\rm lab}+\bK_1,\quad
+\bK^{\rm lab}_{\rm bot}=\bm\Gamma^{\rm lab}+\bK_2,
+\label{eq:labframe}
+\end{equation}
+where $\bm\Gamma^{\rm lab}$ (\code{gamma\_point\_tblg}) lies on the $x$ axis and $|\bK^{\rm lab}_{\rm top,bot}|=4\pi/3a$
+at angles $\pm\theta_{\rm TBG}/2$ (\code{tbg\_model.model\_frame}; checked in
+\code{test\_model\_frame\_dirac\_points}, where the decoupled model has a zero-energy top-layer state at $\bK_1$).
+This relation is what the QTM kinematics needs (\cref{sec:qtmtbg}).
+
+\paragraph{Bloch states.} $H(\bk)u_{n\bk}=E_{n\bk}u_{n\bk}$ with components
+$u_{n\bk}[4g+2\ell+\sigma]$, $g$ the plane-wave index. The states are stored once
+(\code{band\_structure.wavefunctions}) and the \emph{same} gauge is used for the form factors, the self-energy
+and the tunneling amplitudes. The chemical potential is fixed by the filling at temperature $T=5$ K
+(charge neutrality by default); $\xi_{n\bk}=E_{n\bk}-\mu$.
+
+\paragraph{Layer-resolved form factors.} The density of layer $\ell$ at momentum $\bq+\bG$,
+$\rho_\ell(\bq+\bG)=\sum_{\bk}c^\dagger_{\bk}P_\ell e^{-\ii(\bq+\bG)\cdot\br}c_{\bk+\bq}$, has Bloch matrix elements
+\begin{equation}
+\rho^\ell_{nm}(\bk,\bq;\bG)=\bra{u_{n\bk}}P_\ell\,\hat\tau_{\bG}\ket{u_{m,\bk+\bq}}
+\qquad(\code{densityL[l, n, m, k, q, G]}),
+\label{eq:formfactor}
+\end{equation}
+where $P_\ell$ projects on the two sublattices of layer $\ell$ and $\hat\tau_{\bG}$ shifts the plane-wave
+index; $\bk+\bq$ is folded back onto the mesh (\code{k\_plus\_q\_ind}) and the corresponding shift of the
+plane-wave components is applied by \texttt{pybandstructure}. Completeness:
+$\sum_\ell\rho^\ell_{nm}(\bk,0;0)=\delta_{nm}$ (\code{test\_density\_matrix\_completeness}).
+Only $\bG=0$ is used for $\Sigma$ (\cref{as:head}).
+
+\paragraph{Doping and Hartree.} For a doped sample the first-shell Hartree potential
+$V_H=\sum_{|\bG|=G_M}\frac{2\pi e^2}{\varepsilon_H|\bG|}\delta n(\bG)e^{\ii\bG\cdot\br}$ can be solved
+self-consistently (\code{tbg\_model.apply\_hartree}, needs the development version of \texttt{pybandstructure});
+the densities $\delta n(\bG)$ are measured from charge neutrality (regularised occupations), and
+$G_0$ is then built on the Hartree bands. At neutrality the Hartree potential of the BM model vanishes.
+
+\subsection{Moir\'e Brillouin-zone meshes}
+
+$\bk$ and $\bq$ run over the same $N_s\times N_s$ Wigner--Seitz mesh (\code{n\_sites}), with weights summing to one
+and area $A_{\rm BZ}=\frac{\sqrt3}{2}|\bG_M|^2$; the 2D measure is
+\begin{equation}
+\int\frac{\dd^2q}{(2\pi)^2}f(\bq)\simeq\sum_{\bq}w_{\bq}f(\bq),\qquad w_{\bq}=\frac{A_{\rm BZ}}{(2\pi)^2}\,\text{weight}(\bq)
+\qquad(\code{q\_weights\_from\_band\_structure}),
+\label{eq:qweights}
+\end{equation}
+\emph{without} the spin--valley degeneracy (see \cref{sec:degeneracy}); $\bq=0$ is removed ($V$ diverges and its
+measure vanishes). The band structure is computed for valley $K$; valley $K'$ follows by time reversal
+(\cref{sec:valleys}).

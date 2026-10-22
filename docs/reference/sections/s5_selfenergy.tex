@@ -1,0 +1,172 @@
+% ======================================================================
+\section{The G$_0$W self-energy}
+\label{sec:selfenergy}
+% ======================================================================
+
+\subsection{Derivation}
+\label{sec:sigma_derivation}
+
+In the band basis of the sample, the first-order (GW) self-energy at the fermionic Matsubara frequency
+$\ii\omega_n$ is (Hedin~\cite{Hedin1965}, Mahan~\cite{Mahan})
+\begin{equation}
+\Sigma_{nn'}(\bk,\ii\omega_n)=-\frac1\beta\sum_{\ii\Omega_m}\int\!\frac{\dd^2q}{(2\pi)^2}\sum_m\sum_{ab}
+\rho^a_{nm}(\bk,\bq)\,W_{ab}(\bq,\ii\Omega_m)\,\bigl[\rho^b_{n'm}(\bk,\bq)\bigr]^*\,
+G^0_m(\bk+\bq,\ii\omega_n+\ii\Omega_m),
+\label{eq:sigma_matsubara}
+\end{equation}
+with $G^0_m(\bk,z)=1/(z-\xi_{m\bk})$, $a,b$ running over the sheets of the sample (the tip is not an
+intermediate state, \cref{as:decoupled}) and $\rho$ the form factors \eqref{eq:formfactor}. (With $W\to V$ and
+the convergence factor $e^{\ii\Omega0^+}$ this is the Fock term $-\int_{\bq}V\,\nF(\xi_{m\bk+\bq})|\rho|^2$.)
+Split $W=V+W_c$ and use the spectral representation \eqref{eq:spectralrep},
+$W_c(\bq,\ii\Omega)=\int\dd\nu\,S(\bq,\nu)/(\ii\Omega-\nu)$. The bosonic sum is done by contour integration,
+\begin{equation}
+\frac1\beta\sum_{\ii\Omega_m}\frac{1}{(\ii\Omega_m-\nu)(\ii\Omega_m+\ii\omega_n-\xi)}
+=-\frac{\nB(\nu)+\nF(\xi)}{\ii\omega_n+\nu-\xi},
+\end{equation}
+using $\nB(\xi-\ii\omega_n)=-\nF(\xi)$. After the analytic continuation $\ii\omega_n\to\eps+\ii0^+$, the
+correlation self-energy is
+\begin{equation}
+\Sigma^{c}_{nn'}(\bk,\eps)=\int\!\frac{\dd^2q}{(2\pi)^2}\sum_m\sum_{ab}\rho^a_{nm}\,[\rho^b_{n'm}]^*
+\int_{-\infty}^{\infty}\!\dd\nu\;S_{ab}(\bq,\nu)\,\frac{\nB(\nu)+\nF(\xi_m)}{\eps+\nu-\xi_m+\ii0^+},
+\qquad\xi_m\equiv\xi_{m,\bk+\bq},
+\label{eq:sigma_full_line}
+\end{equation}
+which is Eqs.~(37) and (39) of Ref.~\cite{Wei2025} with the layer index in place of the moir\'e $\bG$ index.
+Using $S(\bq,-\nu)=-S(-\bq,\nu)^T$ (\cref{eq:spectralrep}) together with the Onsager relation
+$S(-\bq,\nu)^T=S(\bq,\nu)$ of a time-reversal-symmetric sample (\cref{sec:valleys}), i.e.\ $S(\bq,-\nu)=-S(\bq,\nu)$,
+and $\nB(-\nu)=-1-\nB(\nu)$, the negative frequencies are folded onto $\nu>0$:
+\begin{equation}
+\boxed{\Sigma_{nn'}(\bk,\eps)=-\sum_{\bq}w_{\bq}\sum_m\sum_{ab}\rho^a_{nm}(\bk,\bq)\bigl[\rho^b_{n'm}(\bk,\bq)\bigr]^*
+\int_0^{\omega_{\max}}\!\dd\omega\;S_{ab}(\bq,\omega)\,\mathcal D_m(\omega,\eps)}
+\label{eq:sigma}
+\end{equation}
+\begin{equation}
+\mathcal D_m(\omega,\eps)=\frac{A^+_m(\omega)}{\omega+\xi_m-\eps-\ii\eta_\Sigma}+\frac{A^-_m(\omega)}{-\omega+\xi_m-\eps-\ii\eta_\Sigma},
+\qquad A^\pm_m=\nB(\omega)+\nF(\mp\xi_m)\ \xrightarrow{T=0}\ \Theta(\pm\xi_m).
+\label{eq:D}
+\end{equation}
+The first term describes an electron in an empty state ($\xi_m>0$) of energy $\eps=\xi_m+\omega$ that has emitted
+a boson of energy $\omega$; the second a hole ($\xi_m<0$) at $\eps=\xi_m-\omega$. $\eta_\Sigma$ is a small
+broadening of the resolvents (the $0^+$). \Cref{eq:sigma} is implemented in
+\begin{itemize}
+\item \code{compute\_self\_energy\_band\_matrix} (TBG, band matrix, direct frequency contraction) and
+      \code{compute\_self\_energy\_band\_matrix\_kernel} (same, fast route, \cref{sec:kernel});
+\item \code{compute\_self\_energy\_full\_frequency\_pybandstructure} (TBG, diagonal $n=n'$, returned in the layer basis
+      as the Hadamard product $\rho^a\rho^{b*}\circ\int S\mathcal D$, whose sum over $(a,b)$ is $\Sigma_{nn}$);
+\item \code{slg\_self\_energy.sigma\_full\_frequency\_fast}, \code{sigma\_full\_frequency\_kernel} (graphene,
+      radial $q$ grid with angular average, \cref{sec:radial}).
+\end{itemize}
+
+\subsection{Causality}
+\label{sec:passivity}
+
+The anti-Hermitian part of \cref{eq:sigma} is, for $\eta_\Sigma\to0$,
+\begin{equation}
+\frac{\Sigma-\Sigma^\dagger}{2\ii}=-\pi\sum_{\bq}w_{\bq}\sum_m\Bigl[A^+_m\,R_m S(\bq,\eps-\xi_m)R_m^\dagger
++A^-_m\,R_mS(\bq,\xi_m-\eps)R_m^\dagger\Bigr],\qquad (R_m)_{na}=\rho^a_{nm}(\bk,\bq),
+\end{equation}
+a sum of negative semidefinite matrices when $S\succeq0$ and $A^\pm\ge0$. Hence $\Imm\Sigma_{nn}\le0$ and the
+spectral function below is positive. This holds exactly with the Hermitian spectral density and is verified
+numerically (\code{spectral.is\_passive}).
+
+\subsection{Momentum integration}
+\label{sec:radial}
+
+\paragraph{Moir\'e mesh (TBG).} $\bq$ runs over the full 2D mesh with the weights \eqref{eq:qweights}; the
+direction of $\bq$ is part of the sum and $\bk+\bq$ is folded onto the same mesh, so the external $\bk$ must be a
+mesh point. Removing $\bq=0$ is harmless: the integrand vanishes as $q\to0$ because
+$\int\dd^2q\,V(q)\sim\int q\,\dd q/q$ is finite.
+
+\paragraph{Radial grid (isotropic samples).} For graphene $S(\bq,\omega)$ depends on $|\bq|$ only, and the 2D
+measure is split as
+\begin{equation}
+\int\frac{\dd^2q}{(2\pi)^2}f(\bk,\bq)=\int_0^{q_{\max}}\frac{q\,\dd q}{2\pi}\,\bigl\langle f(\bk,\bq(\vartheta))\bigr\rangle_\vartheta,
+\qquad\langle\cdot\rangle_\vartheta=\frac1{2\pi}\int_0^{2\pi}\dd\vartheta ,
+\label{eq:radial}
+\end{equation}
+trapezoidal weights $w_q=q\Delta q/2\pi$ (\code{make\_radial\_q\_weights}) and $n_\vartheta=64$ uniform angles
+(\code{make\_angular\_quadrature}). The angular average must be done: the intermediate energy
+$\xi^s_{\bk-\bq}=s\hbar v_F|\bk-\bq|-E_F$ and the chirality factor depend on $\vartheta$. Sampling only
+$\vartheta=0$ (collinear) is a different quantity, not a coarse approximation. Defaults: $q\in[0.02,3]k_F$
+($n_q=96$), $\omega\in(0,2.8E_F]$ ($n_\omega=480$).
+
+\subsection{Spin and valley degeneracy}
+\label{sec:degeneracy}
+
+The polarisation bubble \eqref{eq:chi0} sums over the $g=4$ flavours of the particle--hole pair, so $g$ enters
+$\chi^0$, $\varepsilon$ and $W$. In \cref{eq:sigma_matsubara} the internal electron line carries the flavour of
+the external electron (the Coulomb vertex conserves spin and, for $|\bq|\ll|\bK|$, valley), so there is no free
+flavour sum and \emph{no} degeneracy factor in $w_{\bq}$. Including it again would make $\Sigma$ four times too
+large; this was a bug in an early fork of the scripts (\cref{app:changes}).
+
+\subsection{What is not included: exchange and double counting}
+\label{sec:exchange}
+
+Only the correlation part is computed: $S$ is the spectral density of $W$, and $\Imm V=0$ for a static
+background, so the bare-exchange (Fock) self-energy
+$\Sigma^x_{nn'}=-\sum_{\bq}w_{\bq}\sum_m\nF(\xi_m)\sum_{ab}\rho^a_{nm}V_{ab}(\bq)[\rho^b_{n'm}]^*$ is absent.
+$\Sigma^x$ is real and static: it shifts and reshapes the quasiparticle bands but cannot produce satellites or
+lifetimes. Ref.~\cite{Wei2025} (Sec.~IV\,B) likewise neglects the first-order Hartree and Fock diagrams for
+this reason, and the Coulomb interaction is normal ordered. The consequences differ between the two samples:
+\begin{itemize}
+\item \textbf{TBG at neutrality.} The Hartree potential of the BM model vanishes at neutrality, while the Fock term
+would renormalise the flat bands. The correlation-only $\Sigma$ is the self-energy of the
+scheme of Ref.~\cite{Wei2025}; positions of quasiparticle peaks are those of the bare continuum bands dressed
+by $\Ree\Sigma_c$ only, which should be kept in mind when comparing with experiment.
+\item \textbf{Doped graphene.} The omitted $\Sigma^x$ is what enhances the Fermi velocity of
+graphene~\cite{Elias2011}. Without it the correlation part alone narrows the band
+($v^*/v_F\simeq0.92$ in notebook 02). Since $\Sigma^x$ is real, it leaves $\Imm\Sigma$ and hence the energy of
+the satellite structure unchanged, but it moves the quasiparticle peak by $\Sigma^x_{nn}(\bk)$ and thus changes
+the offset between the two. Quasiparticle velocities and peak--satellite offsets of doped graphene computed
+here are therefore correlation-only quantities; $\Sigma^x$ can be added to the Dyson equation as a static term
+when needed.
+\end{itemize}
+
+\subsection{Plasmon-pole form}
+
+Inserting $S\to\sum_nR_n\delta(\omega-\omega_n)$ in \cref{eq:sigma}:
+\begin{equation}
+\Sigma^{\rm PPA}_{nn'}(\bk,\eps)=-\sum_{\bq}w_{\bq}\sum_{m,p}\sum_{ab}\rho^a_{nm}[\rho^b_{n'm}]^*R_{p,ab}(\bq)\,
+\mathcal D_m(\omega_p(\bq),\eps)
+\end{equation}
+(\code{compute\_self\_energy\_layer}, \code{compute\_self\_energy\_pybandstructure}). The full residue matrix is used;
+a rank-one factorisation $R_p\simeq\Phi_p\Phi_p^\dagger$ is a diagnostic only.
+
+\subsection{Fast route: tabulated resolvent kernels}
+\label{sec:kernel}
+
+In \cref{eq:sigma,eq:D} $\xi_m$ and $\eps$ appear in the resolvents only through $u=\xi_m-\eps$, while the
+populations split as $A^\pm=\nB(\omega)+\nF(\mp\xi_m)$. Therefore
+\begin{equation}
+\int_0^{\omega_{\max}}\!\dd\omega\,S(\bq,\omega)\mathcal D_m(\omega,\eps)=\nF(-\xi_m)\,P_{\bq}(u)+\nF(\xi_m)\,M_{\bq}(u)+B^+_{\bq}(u)+B^-_{\bq}(u),
+\label{eq:kernel}
+\end{equation}
+\begin{equation}
+P_{\bq}(u)=\int\dd\omega\frac{S(\bq,\omega)}{\omega+u-\ii\eta_\Sigma},\quad
+M_{\bq}(u)=\int\dd\omega\frac{S(\bq,\omega)}{-\omega+u-\ii\eta_\Sigma},\quad
+B^\pm_{\bq}(u)=\int\dd\omega\frac{\nB(\omega)S(\bq,\omega)}{\pm\omega+u-\ii\eta_\Sigma}.
+\end{equation}
+These four matrix functions of one variable depend on $\bq$ only. They are tabulated once on a uniform $u$ grid
+of spacing $\eta_\Sigma/8$ (with the same trapezoidal rule in $\omega$) and linearly interpolated for every
+$(\bk,m,\eps)$ (\code{ResolventKernel}). This is an exact rewriting up to the interpolation error
+($\lesssim2\times10^{-4}$ relative in the tests), and makes the cost per external $\bk$ independent of $n_\omega$:
+for graphene it is $\sim300$ times faster than the direct contraction, which makes full twist maps cheap.
+At $T=0$ the Bose terms vanish since the $\omega$ grid starts above zero.
+
+\subsection{Numerical parameters and their roles}
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{llX}
+\toprule
+symbol & code & role\\
+\midrule
+$\eta$ & \code{cfg.eta}, \code{TBGParams.eta} & broadening of $\chi^0$ and $V$ ($\omega+\ii\eta$); sets the width of undamped plasmons in $S$. TBG default: $2\hbar v^*|\bG_M|/N_s$ (mesh-tied, flat-band regime only)\\
+$\eta_\Sigma$ & \code{eta\_self} & $0^+$ of the resolvents in \cref{eq:D}; floors $\Imm\Sigma$ near $\eps=0$ (the Fermi-liquid $\eps^2$ law is recovered only for $\eps\gg\eta_\Sigma$)\\
+$\eta_{\rm qp}$ & \code{eta\_qp} & extrinsic width in the Dyson equation (finite junction, disorder); keeps the QP peak finite\\
+$\omega_{\max}$, $n_\omega$ & \code{omega\_grid} & frequency window of $S$; must contain the plasmon branches and the relevant continuum\\
+$q_{\max}$, $n_q$, $n_\vartheta$ & radial grid & graphene: $3k_F$, 96, 64 (convergence: $n_q$ is the slow one, $\sim1/n_q$)\\
+$N_s$, $n_b$ & \code{n\_sites}, \code{n\_bands} & TBG mesh and number of bands per side; memory of \code{densityL} $\propto 2(2n_b)^2N_s^4$\\
+\bottomrule
+\end{tabularx}
+\end{center}

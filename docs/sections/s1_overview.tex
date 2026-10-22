@@ -1,0 +1,140 @@
+% ======================================================================
+\section{Overview}
+\label{sec:overview}
+% ======================================================================
+
+\subsection{What is computed}
+
+The package computes the single-particle spectral function of the electrons of a two-dimensional
+\emph{sample} embedded in an arbitrary van der Waals stack, dressed by the dynamically screened Coulomb
+interaction at the level of one-shot G$_0$W, and the momentum-resolved tunneling conductance that a
+quantum twisting microscope (QTM) measures on it. The chain of quantities is shown in \cref{fig:pipeline}:
+\begin{enumerate}
+\item the \textbf{bare Coulomb kernel} $V_{\ell\ell'}(q,\omega)$ between the $N$ sheets of the stack, from
+      Poisson's equation in a stratified uniaxial dielectric with optional gates (\cref{sec:electrostatics});
+\item the \textbf{electronic model} of every subsystem: bands $\xi_{n\bk}$, Bloch states and the
+      layer-projected density matrix elements (form factors) $\rho^\ell_{nm}(\bk,\bq)$ (\cref{sec:models});
+\item the \textbf{independent-particle polarisability} $\chi^0_{\ell\ell'}(\bq,\omega)$, the RPA dielectric
+      matrix $\varepsilon=1-V\chi^0$ and the \textbf{screened interaction} $W=\varepsilon^{-1}V$, its spectral
+      density $S$, the loss function and the collective modes (\cref{sec:screening});
+\item the \textbf{retarded G$_0$W self-energy} $\Sigma_{nn'}(\bk,\eps)$ of the sample (\cref{sec:selfenergy});
+\item the \textbf{spectral function} $A_{nn'}(\bk,\eps)$ from the Dyson equation (\cref{sec:spectral});
+\item the \textbf{QTM differential conductance} $dI/dV(V,\theta)$ and $d^2I/dV^2$ (\cref{sec:qtm}).
+\end{enumerate}
+The results of the worked examples (notebooks 01--05) are collected in \cref{sec:results} and interpreted in
+\cref{sec:interpretation} (notebook 06); grids, cost, validation and limitations are in \cref{sec:numerics}.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[node distance=5mm and 7mm, every node/.style={font=\small},
+  box/.style={draw, rounded corners=2pt, align=center, inner sep=3pt, fill=#1},
+  box/.default={gray!8}, >={Stealth[length=2mm]}]
+\node[box=blue!8] (geo) {stack geometry\\ $d_j$, $\varepsilon^{(j)}(\omega)$, gates};
+\node[box=blue!8, below=of geo] (V) {$V(q,\omega)=4\pi e^2A^{-1}$\\ \S\ref{sec:electrostatics}};
+\node[box=orange!10, right=18mm of geo] (H) {models: Dirac / BM-TBG\\ $\xi_{n\bk}$, $u_{n\bk}$ \ \S\ref{sec:models}};
+\node[box=orange!10, below=of H] (rho) {form factors\\ $\rho^\ell_{nm}(\bk,\bq)$};
+\node[box=orange!10, below=of rho] (chi) {$\chi^0_{\ell\ell'}(\bq,\omega+\ii\eta)$\\ block diagonal};
+\node[box=green!10, below=of V, yshift=-9mm] (W) {$\varepsilon=1-V\chi^0$, \ $W=\varepsilon^{-1}V$\\ $S=\ii(W-W^\dagger)/2\pi$ \ \S\ref{sec:screening}};
+\node[box=red!8, anchor=west] (Sig) at ($(W.east -| chi.east)+(18mm,0)$) {$\Sigma_{nn'}(\bk,\eps)$\\ full frequency / PPA\\ \S\ref{sec:selfenergy}};
+\node[box=red!8, below=of Sig] (A) {$A_{nn'}(\bk,\eps)$\\ matrix Dyson \ \S\ref{sec:spectral}};
+\node[box=violet!10, below=of A] (G) {$dI/dV(V,\theta)$\\ \S\ref{sec:qtm}};
+\node[box=violet!10, left=18mm of G] (tw) {twist $\theta$: $\bK_\theta=O(\theta)\bK_{\rm top}$\\ tunneling amplitudes $\Lambda_\lambda$};
+\draw[->] (geo) -- (V); \draw[->] (H) -- (rho); \draw[->] (rho) -- (chi);
+\draw[->] (V) -- (W); \draw[->] (chi) -- (W);
+\draw[->] (W.east) -- (Sig.west); \draw[->] (rho.east) -| ($(Sig.north)+(0.6,0)$);
+\draw[->] (Sig) -- (A); \draw[->] (A) -- (G); \draw[->] (tw) -- (G);
+\end{tikzpicture}
+\caption{Computational chain. Blue: electrostatics of the stack; orange: electronic structure of the
+subsystems; green: RPA screening; red: G$_0$W self-energy and spectral function; violet: QTM.}
+\label{fig:pipeline}
+\end{figure}
+
+\subsection{Units and conventions}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+quantity & convention\\
+\midrule
+energies, frequencies, temperature & eV, with $\hbar=k_B=1$ \\
+lengths, momenta & nm, nm$^{-1}$\\
+electrostatics & Gaussian: $\nabla\cdot(\bm\varepsilon\nabla\phi)=-4\pi\rho$, $e^2=1.4399764$ eV\,nm\\
+2D Fourier transforms & $f(\bq)=\int\dd^2r\,e^{-\ii\bq\cdot\br}f(\br)$; $V(q)$ in eV\,nm$^2$\\
+momentum integrals & $\frac1A\sum_{\bq}\to\int\frac{\dd^2q}{(2\pi)^2}$; weights $w_{\bq}$ in nm$^{-2}$\\
+response & retarded, evaluated at $\omega+\ii\eta$, $\eta>0$\\
+dielectric matrix & $\varepsilon=1-V\chi^0$ \quad(\emph{not} $1-\chi^0V$)\\
+screened interaction & $W=\varepsilon^{-1}V$ \quad(\emph{not} $V\varepsilon^{-1}$)\\
+spectral density of $W$ & $S=\ii(W-W^\dagger)/(2\pi)$, $=-\Imm W/\pi$ for symmetric $W$\\
+energies of states & $\xi_{n\bk}=E_{n\bk}-\mu$ (measured from the sample Fermi level)\\
+spectral function & $A=\ii(G-G^\dagger)/(2\pi)$, $\int A\,\dd\eps=1$ per state\\
+twist rotation & $O(\theta)=\begin{psmallmatrix}\cos\theta&\sin\theta\\-\sin\theta&\cos\theta\end{psmallmatrix}$ (clockwise, as in Ref.~\cite{Wei2025})\\
+flattened index & $(\ell,\bG)\mapsto \ell\,n_G+G$ for every matrix in (layer, reciprocal-vector) space\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Physical assumptions}
+\label{sec:assumptions}
+
+The following assumptions are made throughout; where they are relaxed or tested this is said explicitly.
+
+\begin{assumption}[Electrostatics]\label{as:electro}
+The sheets are infinitely thin and the Coulomb interaction is quasi-static (no retardation:
+$q\gg\omega/c$). Each dielectric region is homogeneous, local and uniaxial with the optical axis along $z$,
+$\bm\varepsilon=\diag(\varepsilon_\parallel,\varepsilon_\parallel,\varepsilon_z)$, possibly dispersive and
+lossy. Gates are grounded perfect conductors.
+\end{assumption}
+
+\begin{assumption}[Decoupled subsystems]\label{as:decoupled}
+Different electronic subsystems (e.g.\ the QTM tip and the sample) are not tunnel coupled when the
+screening is computed: there is no density operator connecting them, so $\chi^0$ is block diagonal and all
+inter-subsystem physics is in $V$. Within a subsystem (the two layers of TBG) the layers are hybridised by
+the electronic Hamiltonian and $\chi^0$ has layer-off-diagonal elements.
+\end{assumption}
+
+\begin{assumption}[RPA and one-shot G$_0$W]\label{as:gw}
+The density response is the RPA one built on the bare (or Hartree) bands, and the self-energy is the first
+term of Hedin's equations, $\Sigma=\ii G_0W_0$, with the non-interacting $G_0$ of the sample. Vertex
+corrections and self-consistency are neglected. Only the \emph{correlation} part
+$\Sigma_c=\ii G_0(W-V)$ is kept; the bare exchange (Fock) term is excluded (\cref{sec:exchange}).
+\end{assumption}
+
+\begin{assumption}[Head only]\label{as:head}
+Unless stated otherwise only the $\bG=\bG'=0$ (head) element of the moir\'e reciprocal-lattice structure of
+$\chi^0$, $W$ and of the form factors is kept (local-field effects off, $n_G=1$).
+\end{assumption}
+
+\begin{assumption}[Weak tunneling and small tip Fermi surface]\label{as:qtm}
+Tip--sample tunneling is treated to lowest order and conserves in-plane momentum; the tip is a non-interacting
+graphene sheet whose chemical potential follows the bias while its bands stay fixed relative to the sample Fermi
+level; the sample chemical potential does not move relative to the sample bands; the tip Fermi momentum is small
+compared with the momentum scale on which the sample spectral function varies; $T=0$ (finite $T$ by smoothing).
+Only elastic tunneling into the dressed sample states is included (interactions enter through $A^S$)~\cite{Wei2025}.
+\end{assumption}
+
+\subsection{Package layout}
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+module & content\\
+\midrule
+\code{g0w.layer\_coulomb} & $V(q,\omega)$ of $N$ sheets; gates; capped slab; branch-tracked $\kappa(\omega)$ (\S\ref{sec:electrostatics})\\
+\code{g0w.dielectrics} & hBN, SiO$_2$, Al$_2$O$_3$ dielectric functions\\
+\code{g0w.layer\_helpers} & \code{layer\_helpers\_G}, \code{LayerHelpers}: $\rho^\ell_{nm}$, $\chi^0$, $\varepsilon$, loss from \texttt{pybandstructure}\\
+\code{g0w.screening} & block-diagonal $\chi^0$, $\varepsilon$ and $W$ of a stack, loss, layer-channel split\\
+\code{g0w.self\_energy\_ppa} & plasmon poles and residues, PPA self-energy, $q$ weights\\
+\code{g0w.self\_energy\_full\_frequency} & full-frequency $\Sigma$, band-matrix $\Sigma_{nn'}$, resolvent kernels\\
+\code{g0w.spectral} & scalar/matrix Dyson equation, $A$, quasiparticle solution\\
+\code{g0w.qtm} & twist kinematics, tunneling amplitudes, $dI/dV$, $d^2I/dV^2$ (SLG and TBG)\\
+\code{g0w.models.dirac\_chi} & analytic $\chi^0$ of doped graphene\\
+\code{g0w.models.slg\_stack}, \code{slg\_self\_energy} & SLG$|$hBN$|$SLG junction, Dirac form factor, $\Sigma$, $A$\\
+\code{g0w.models.tbg\_model}, \code{tbg\_stack}, \code{tbg\_self\_energy} & TBG continuum model, three-sheet stack, $\Sigma_{nn'}$\\
+\code{g0w.satellites} & satellite energies: emission edge, energy-loss decomposition of $-\Imm\Sigma$ (\S\ref{sec:interpretation})\\
+\code{notebooks/01}--\code{06} & executed examples: geometry, SLG G$_0$W, TBG G$_0$W, QTM on SLG and on TBG, satellites\\
+\code{scripts/run\_slg\_qtm.py}, \code{run\_tbg\_qtm.py} & command-line drivers for the $dI/dV$ maps (\code{.npz} + \code{.png})\\
+\code{tests/} & regression and physics tests (\code{python tests/run\_tests.py})\\
+\bottomrule
+\end{tabularx}
+\end{center}
