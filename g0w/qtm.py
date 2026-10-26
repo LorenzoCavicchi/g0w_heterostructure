@@ -219,7 +219,9 @@ def tbg_tunneling_amplitudes(tbg: Dict[str, Any], k_index: int, bands: Sequence[
     ``chiral``     : u^lambda_{k+G, top, A} + u^lambda_{k+G, top, B}  (Wei Eq. 32), with
                      G = ``G_int`` the moire vector that unfolds k to the tip momentum;
                      0 if k+G lies outside the plane-wave cutoff.
-    ``constant``   : 1 for every band (spectral function, no matrix element).
+    ``constant``   : 1 for every band (spectral function, no matrix element).  In
+                     :func:`tbg_didv` this model is evaluated as Tr A, not as
+                     sum_{lambda rho} A_{lambda rho}, which would depend on the band phases.
     ``top_weight`` : sqrt of the top-layer probability (foil: not what the tip couples to).
 
     The eigenvectors are those stored in the band structure (``bs.wavefunctions``),
@@ -311,6 +313,13 @@ def tbg_didv(tbg: Dict[str, Any], traj: Dict[str, np.ndarray], spec: Dict[str, n
     r"""
     dI/dV(V, theta)/(e^2 Gamma) = sum_{lambda rho} Lambda_lambda A_{lambda rho}(eV) Lambda_rho^*
     along a trajectory.  Returns ``didv`` (n_theta, n_eps) and ``Lambda`` (n_theta, n_b).
+
+    ``model="constant"`` (no matrix element) returns Tr A(k, eV) = sum_lambda A_{lambda lambda}.
+    Setting Lambda = 1 in the contraction would instead give sum_{lambda rho} A_{lambda rho}:
+    under u_lambda -> e^{i phi_lambda} u_lambda the off-diagonal A_{lambda rho} pick up
+    phases that no amplitude compensates, so that sum depends on the gauge of the
+    eigenvectors.  The trace is gauge invariant and, for a band-diagonal A, coincides
+    with the old result.
     """
     bands = spec["bands"]
     n_th = traj["theta_deg"].size
@@ -323,7 +332,10 @@ def tbg_didv(tbg: Dict[str, Any], traj: Dict[str, np.ndarray], spec: Dict[str, n
                                      model=model, legacy=legacy_amplitude)
         Lam[it] = L
         A = spec["A"][iu]                                   # (n_eps, n_b, n_b)
-        out[it] = np.real(np.einsum("l,elr,r->e", L, A, np.conj(L)))
+        if model == "constant":
+            out[it] = np.real(np.trace(A, axis1=1, axis2=2))
+        else:
+            out[it] = np.real(np.einsum("l,elr,r->e", L, A, np.conj(L)))
     return dict(didv=out, Lambda=Lam)
 
 
