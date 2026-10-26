@@ -194,6 +194,23 @@ def test_band_matrix_didv_is_gauge_invariant_and_positive():
     assert np.allclose(np.einsum("l,elr,r->e", L2, A2, np.conj(L2)), np.einsum("l,elr,r->e", L, A, np.conj(L)))
 
 
+def test_constant_tunneling_is_trace_and_gauge_invariant():
+    """model="constant" must give Tr A, independent of the band phases (not sum_{lr} A_lr)."""
+    tbg, lh = _tbg()
+    om, _, W = _stack()
+    S = tse.sample_spectral_density(W, hermitian=True)
+    eps = np.linspace(-0.1, 0.1, 81)
+    ker = tse.build_kernel_tbg(tbg, S, om, eps, eta_self=tbg["params"].eta)
+    tr = qtm.tbg_trajectory(tbg, np.array([0.0, 0.5, 1.0]))
+    spec = qtm.tbg_spectral_along_trajectory(tbg, lh, tr, None, None, tse.q_weights_tbg(tbg), eps, kernel=ker)
+    d = qtm.tbg_didv(tbg, tr, spec, model="constant")["didv"]
+    trA = np.real(np.trace(spec["A"], axis1=2, axis2=3))[spec["inverse"]]
+    assert np.allclose(d, trA)
+    phase = np.exp(1j * np.random.default_rng(1).uniform(0, 2 * np.pi, spec["A"].shape[-1]))
+    spec2 = dict(spec, A=np.conj(phase)[None, None, :, None] * spec["A"] * phase[None, None, None, :])
+    assert np.allclose(qtm.tbg_didv(tbg, tr, spec2, model="constant")["didv"], d)
+
+
 def test_valley_symmetrized_chi0_is_time_reversal_symmetric():
     """chi(q) = (1/2)[X(q) + X(-q)^T] restores W(q) = W(-q)^T; the single-valley X does not."""
     tbg, lh = _tbg()

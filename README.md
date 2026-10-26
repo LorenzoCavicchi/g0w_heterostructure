@@ -30,7 +30,7 @@ Tested on Linux with:
 | 3.13 | 2.1 (PyPI) | 2.5 | 1.18 | 3.11 |
 | 3.10 | 2.1 (PyPI) | 2.2 | 1.15 | 3.10 |
 
-With these versions all 42 tests pass, and all notebooks and scripts run and reproduce the stored results.
+With these versions all 43 tests pass, and all notebooks and scripts run and reproduce the stored results.
 
 ### Option A — pip and a virtual environment
 
@@ -104,12 +104,12 @@ pip install "pybandstructure>=2.1"
 
 ```bash
 python -c "import g0w; from g0w.compat import import_pybandstructure as ip; print(g0w.__version__, ip().__file__)"
-python -m pytest tests            # 42 tests, about 1.5 min
+python -m pytest tests            # 43 tests, about 1.5 min
 # or, without pytest:
 python tests/run_tests.py
 ```
 
-All tests should pass. Without `pybandstructure` the 15 TBG tests (`tests/test_tbg.py`) are skipped and the
+All tests should pass. Without `pybandstructure` the 16 TBG tests (`tests/test_tbg.py`) are skipped and the
 other 27 pass.
 
 ---
@@ -177,7 +177,7 @@ Each writes `<out>.npz` (bias, angle, dI/dV, d²I/dV², spectral data) and `<out
 | `g0w/compat.py` | NumPy/SciPy compatibility layer for `pybandstructure` |
 | `notebooks/` | executed examples 01–06 and their script versions in `notebooks/src/` |
 | `scripts/` | command-line drivers for the QTM maps |
-| `tests/` | 42 regression and physics tests |
+| `tests/` | 43 regression and physics tests |
 | `docs/notes.pdf`, `docs/notes.tex`, `docs/sections/`, `docs/figures/` | the notes and their sources |
 | `docs/reference/` | development record of the corrections made while building the package; it refers to earlier internal scripts that are not part of this distribution |
 | `pyproject.toml`, `requirements.txt`, `environment.yml` | installation |
