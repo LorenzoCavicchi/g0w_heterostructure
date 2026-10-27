@@ -7,6 +7,7 @@ name = "g0w-heterostructure"
 version = "1.0.0"
 description = "Layer-resolved G0W self-energy, spectral function and quantum-twisting-microscope conductance of van der Waals heterostructures"
 readme = "README.md"
+license = { text = "GPL-3.0-only" }
 authors = [
     { name = "Lorenzo Cavicchi", email = "lcavicch@sissa.it" },
 ]
