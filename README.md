@@ -212,9 +212,17 @@ in Sec. 10.4.
   — continuum model of TBG.
 * P. Novelli, I. Torre, F. H. L. Koppens, F. Taddei, M. Polini, Phys. Rev. B **102**, 125403 (2020) —
   `pybandstructure`.
+* L. Cavicchi, I. Torre, P. Jarillo-Herrero, F. H. L. Koppens, M. Polini, *Theory of intrinsic acoustic plasmons in
+  twisted bilayer graphene*, Phys. Rev. B **110**, 045431 (2024),
+  [doi:10.1103/PhysRevB.110.045431](https://doi.org/10.1103/PhysRevB.110.045431).
 
 The complete bibliography is in `docs/notes.pdf`.
 
-## 7. Author
+## 7. License
+
+This program is free software, distributed under the terms of the GNU General Public License v3.0
+(see [`LICENSE`](LICENSE)).
+
+## 8. Author
 
 Lorenzo Cavicchi (SISSA, Trieste) — lcavicch@sissa.it
