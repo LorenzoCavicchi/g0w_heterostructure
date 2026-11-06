@@ -14,7 +14,7 @@
 momenta $\bq$ & radial, $n_q=144$ (02), $96$ (04) on $[0.02,3]k_F$; $n_\theta=64$ angles & $18\times18$ moir\'e mesh (324 points), $\bq=0$ removed\\
 bands & two Dirac bands, analytic & $8$ continuum bands, $G_{\max}=3$ (37 plane-wave shells)\\
 $\omega$ grid for $S$ & $480$ points on $[10^{-4},2.8E_F]$ & $320$ points on $[2\eta,160\ \text{meV}]$\\
-$\eta$ ($\chi^0$, $V$, $W$) & 1 meV & $0.71$ meV $=2v_n|\bG_M|/N_s$\\
+$\eta$ ($\chi^0$, $V$, $W$) & 1 meV & $0.71$ meV $=2\hbar v_{\rm BM}|\bG_M|/N_s$\\
 $\eta_\Sigma$ (resolvents) & 1 meV & $=\eta$\\
 $\eta_{\rm qp}$ (Dyson) & 2 meV & 0.5 meV\\
 $\eps$ grid ($=eV$) & 701 points on $\pm350$ meV & 601 points on $\pm150$ meV\\
@@ -24,21 +24,22 @@ kernel step $du$ & $\eta_\Sigma/8$ & $\eta_\Sigma/8$\\
 \end{center}
 
 \paragraph{Three broadenings, three roles.} $\eta$ turns the undamped collective modes into Lorentzians that the
-$\omega$ grid can integrate; it must exceed the grid step and, for TBG, the mesh floor $v_n|\bG_M|/N_s$ below which
+$\omega$ grid can integrate. It must exceed the grid step and, for TBG, the mesh floor $\hbar v_{\rm BM}|\bG_M|/N_s$ (the energy a band
+of velocity $v_{\rm BM}$ sweeps across one mesh spacing) below which
 $\chi^0$ resolves individual $\bk$ points (\code{TBGParams.eta\_mesh}). $\eta_\Sigma$ regularises the resolvents of
-\cref{eq:sigma}; it sets the energy resolution of $\Sigma$ and the floor of $-\Imm\Sigma$ at $\eps=0$. $\eta_{\rm qp}$ is
-an extrinsic width added in the Dyson equation; it keeps $A$ finite where $\Imm\Sigma\to0$ and plays the role of
+\cref{eq:sigma}. It sets the energy resolution of $\Sigma$ and the floor of $-\Imm\Sigma$ at $\eps=0$. $\eta_{\rm qp}$ is
+an extrinsic width added in the Dyson equation. It keeps $A$ finite where $\Imm\Sigma\to0$ and plays the role of
 the experimental resolution. Physical widths are those of $-\Imm\Sigma$ that exceed all three.
 
-\paragraph{Away from the magic angle.} The TBG heuristic $\eta=2v_n|\bG_M|/N_s$ scales with the renormalised
-velocity; at $5^\circ$ it gives $\sim120$ meV and must be replaced by \code{eta\_override}.
+\paragraph{Away from the magic angle.} The TBG heuristic $\eta=2\hbar v_{\rm BM}|\bG_M|/N_s$ scales with the renormalised
+velocity, and at $5^\circ$ it gives $\sim120$ meV and must be replaced by \code{eta\_override}.
 
 \subsection{Cost}
 
-The TBG pipeline of notebook 03 on one CPU core: band structure 10 s; form factors $\rho^\ell_{nm}(\bk,\bq)$ 35 s
-(0.21 GB for $2\times8\times8\times324\times324$); $\chi^0$ and $W$ on $324\times320$ $(\bq,\omega)$ points 39 s; resolvent
-kernel 4 s; band-matrix $\Sigma$ ($8\times8\times601$) $\simeq1$ s per $\bk$ with the kernel against $\simeq12$ s for the
-direct contraction. The direct route scales as $n_q\,n_\omega\,n_b^2\,n_m\,n_\eps$, the kernel route as
+On one CPU core the TBG pipeline of notebook 03 takes 10 s for the band structure and 35 s for the form factors
+$\rho^\ell_{nm}(\bk,\bq)$, which occupy 0.21 GB ($2\times8\times8\times324\times324$ complex numbers). $\chi^0$ and $W$ on
+$324\times320$ $(\bq,\omega)$ points take 39 s and the resolvent kernel 4 s. The band-matrix $\Sigma$ ($8\times8\times601$ values)
+then costs $\simeq1$ s per $\bk$ with the kernel, against $\simeq12$ s for the direct contraction. The direct route scales as $n_q\,n_\omega\,n_b^2\,n_m\,n_\eps$, the kernel route as
 $n_q\,n_b^2\,n_m\,n_\eps$ after a one-off tabulation of cost $n_q\,n_\omega\,n_u$. For SLG the kernel route costs $\simeq1$--$2$ s per $(\bk,\text{band})$ with $n_q=96$--$144$ and $n_\vartheta=64$, against
 $\simeq80$ s for the direct integration. Memory is dominated by
 \code{densityL}, which grows as $N_s^4$: $N_s=24$ needs $0.7$ GB and $N_s=30$ 1.7 GB.
@@ -80,22 +81,23 @@ energy-loss decomposition sums to the full-frequency $-\Imm\Sigma$ & $<5\%$\\
 
 \begin{itemize}[leftmargin=*]
 \item \textbf{Head only.} Local fields are omitted (\cref{as:head}). For TBG at $1.2^\circ$ the moir\'e umklapp
-$\bG\neq0$ components of $\chi^0$ are not negligible at $|\bq|\sim|\bG_M|$; \code{LayerHelpers} supports $n_G>1$ for
-$\chi^0$ and $\varepsilon$, but the self-energy routines contract only the head.
-\item \textbf{No exchange.} \Cref{sec:exchange}: correlation-only $\Sigma$; for TBG at neutrality this matches the
-scheme of Ref.~\cite{Wei2025}, for doped graphene it misses the velocity enhancement.
+$\bG\neq0$ components of $\chi^0$ are not negligible at $|\bq|\sim|\bG_M|$, and momentum transfers outside the first
+zone are dropped from $\Sigma$. \code{LayerHelpers} supports $n_G>1$ for $\chi^0$ and $\varepsilon$, but the self-energy
+routines contract only the head.
+\item \textbf{No exchange.} $\Sigma$ contains correlation only (\cref{sec:exchange}). For TBG at neutrality this matches the
+scheme of Ref.~\cite{Wei2025}, while for doped graphene it misses the velocity enhancement.
 \item \textbf{Truncations.} For SLG, $q\le3k_F$: the large-$q$ interband tail of $W$ is cut off, which mainly affects
-$\Ree\Sigma$ (logarithmically) and hence $v^*$; satellites, which come from $q\lesssim k_F$, are converged. For TBG,
-$\omega\le160$ meV and $8$ bands: transitions to and between remote bands above this window are missing in $S$; their
-effect on the flat bands is a nearly static real shift.
-\item \textbf{Mesh.} The TBG $\bq$ sum is a $18\times18$ (or $12\times12$ for quick runs) mesh; $\Sigma$ inherits the
+$\Ree\Sigma$ (logarithmically) and hence $v^*$, while the satellites, which come from $q\lesssim k_F$
+(\cref{fig:sigma_anatomy}b), are converged. For TBG, $\omega\le160$ meV and $8$ bands: transitions to and between remote bands
+above this window are missing in $S$, and their effect on the flat bands is a nearly static real shift.
+\item \textbf{Mesh.} The TBG $\bq$ sum is a $18\times18$ (or $12\times12$ for quick runs) mesh. $\Sigma$ inherits the
 mesh ripples of $\chi^0$ unless $\eta\gtrsim\eta_{\rm mesh}$, and the QTM trajectory is snapped to the mesh,
 so the $(\theta,V)$ map is piecewise constant in $\theta$ on steps of $|\bG_M|/(N_sK)$ ($0.12^\circ$ for $N_s=18$).
-\item \textbf{Band window.} Only the 8 computed bands enter $A^S$; at large $|\theta|$ the tip probes momenta far from
+\item \textbf{Band window.} Only the 8 computed bands enter $A^S$ and the sum over intermediate states $m$. At large $|\theta|$ the tip probes momenta far from
 $\kappa_{\rm top}$ where the top-layer weight is carried by bands outside the window, and the map darkens.
 \item \textbf{Static dielectrics.} hBN is used with its static anisotropic constants unless a dispersive model from
-\code{g0w.dielectrics} is chosen; phonon polaritons of hBN then enter $V(\bq,\omega)$ but are untested in the
+\code{g0w.dielectrics} is chosen. The phonon polaritons of hBN then enter $V(\bq,\omega)$, but they are untested in the
 self-energy routines.
 \item \textbf{QTM.} \Cref{eq:didv} assumes perfect momentum resolution and a constant tip DOS
-(\cref{sec:qtm}); temperature and lock-in broadening are mimicked by Gaussian smoothing.
+(\cref{sec:qtm}). Temperature and lock-in broadening are mimicked by Gaussian smoothing.
 \end{itemize}

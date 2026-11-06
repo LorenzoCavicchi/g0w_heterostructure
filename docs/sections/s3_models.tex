@@ -11,7 +11,8 @@ point, $\hbar v_F=0.658$ eV\,nm ($v_F=10^6$ m/s) and $g=g_sg_v=4$. The bands and
 \begin{equation}
 \xi^s_{\bp}=s\hbar v_F|\bp|-E_F,\qquad u^s_{\bp}=\tfrac{1}{\sqrt2}(1,\,s\,e^{\ii\phi_{\bp}}),\qquad s=\pm1,
 \end{equation}
-with $k_F=\sqrt{4\pi n/g}$ and $E_F=\hbar v_Fk_F$ ($n=10^{12}$ cm$^{-2}$ $\Rightarrow$ $k_F=0.1772$ nm$^{-1}$,
+where $\tau=\pm1$ labels the valley, $\phi_{\bp}$ is the polar angle of $\bp$, $k_F=\sqrt{4\pi n/g}$ the Fermi momentum at
+electron density $n$ and $E_F=\hbar v_Fk_F$ the Fermi energy ($n=10^{12}$ cm$^{-2}$ $\Rightarrow$ $k_F=0.1772$ nm$^{-1}$,
 $E_F=116.6$ meV). The overlap that dresses every Coulomb vertex is the chirality factor
 \begin{equation}
 F^{s's}(\bp,\bp')=|\braket{u^{s'}_{\bp}}{u^{s}_{\bp'}}|^2=\tfrac12\bigl[1+ss'\cos\angle(\bp,\bp')\bigr],
@@ -19,8 +20,9 @@ F^{s's}(\bp,\bp')=|\braket{u^{s'}_{\bp}}{u^{s}_{\bp'}}|^2=\tfrac12\bigl[1+ss'\co
 \label{eq:chirality}
 \end{equation}
 which forbids intraband backscattering and interband forward scattering
-(\code{slg\_self\_energy.make\_dirac\_form\_factor}). The sample has only one sheet, so the layer-projected
-form factor is $\rho^\ell=\delta_{\ell S}\braket{u}{u'}$: a sample electron has no intermediate state in the tip.
+(\code{slg\_self\_energy.make\_dirac\_form\_factor})~\cite{CastroNeto2009,Kotov2012}. The sample has only one sheet,
+so the layer-projected form factor of \cref{sec:formfactors} is $\rho^\ell=\delta_{\ell S}\braket{u}{u'}$, where $S$ labels
+the sample sheet: a sample electron has no intermediate state in the tip.
 
 \subsection{Twisted bilayer graphene: continuum model}
 \label{sec:tbgmodel}
@@ -28,7 +30,8 @@ form factor is $\rho^\ell=\delta_{\ell S}\braket{u}{u'}$: a sample electron has 
 \paragraph{Hamiltonian.} One valley ($\tau=+$) of the Bistritzer--MacDonald model in the form of
 Koshino \emph{et al.}~\cite{BM2011,Koshino2018} as implemented in \texttt{pybandstructure}
 (\code{koshino}). In the basis of plane waves $\bk+\bG$ ($\bG$ in the moir\'e reciprocal lattice,
-$|\bG|\le G_{\max}|\bG_M|$, $G_{\max}=3$, i.e.\ 37 shells) and of the four orbitals
+$|\bG|\le G_{\max}|\bG_M|$ with $G_{\max}=3$, i.e.\ 37 plane waves, so that $H(\bk)$ is a $148\times148$ matrix) and of the
+four orbitals
 $(\ell,\sigma)\in\{t,b\}\times\{A,B\}$,
 \begin{gather}
 H_{\bG\bG'}(\bk)=\delta_{\bG\bG'}
@@ -37,13 +40,31 @@ H_{\bG\bG'}(\bk)=\delta_{\bG\bG'}
 \nonumber\\
 h_\ell(\bk)=\hbar v\,\bigl[R_\ell(\bk-\bK_\ell)\bigr]\cdot(\tau\sigma_x,-\sigma_y),
 \end{gather}
-where $R_{t,b}=O(\pm\theta_{\rm TBG}/2)$, $\bK_{1,2}=\frac{|\bG_M|}{\sqrt3}(-\frac{\sqrt3}{2},\pm\frac12)$ are the
-moir\'e $\kappa$ points at which the top ($1$) and bottom ($2$) Dirac cones sit, $\bm g_j\in\{0,\bm b_1,\bm b_2\}$
-and $T_j=u_{AA}\sigma_0+u_{AB}(\ldots)$ are the three interlayer hoppings with
-$|\bG_M|=8\pi\sin(\theta_{\rm TBG}/2)/(\sqrt3a)$, $a=0.246$ nm. Parameters (Ref.~\cite{Wei2025}):
-$\theta_{\rm TBG}=1.20^\circ$, $u_{AB}=117$ meV, $u_{AA}=0.7u_{AB}$, $\hbar v=0.657$ eV\,nm, so that
-$\alpha=u_{AB}/(\hbar vk_\theta)=0.56$ and the two central bands are 24--25 meV wide and separated from the
-remote bands by $\approx44$ meV. Only the $2n_b=8$ bands closest to neutrality are computed
+where $R_{t,b}=O(\pm\theta_{\rm TBG}/2)$ rotates the two layers in opposite directions, and
+$\bK_{1,2}=\frac{|\bG_M|}{\sqrt3}(-\frac{\sqrt3}{2},\pm\frac12)$ are the moir\'e $\kappa$ points at which the top ($1$) and bottom
+($2$) Dirac cones sit. The moir\'e reciprocal lattice is spanned by $\bm b_1,\bm b_2$ with
+$|\bm b_{1,2}|=|\bG_M|=8\pi\sin(\theta_{\rm TBG}/2)/(\sqrt3a)$, $a=0.246$ nm the graphene lattice constant. The interlayer
+tunneling connects plane waves that differ by $\bm g_j\in\{0,\bm b_1,\bm b_2\}$ with the $2\times2$ sublattice matrices of
+Koshino \emph{et al.}~\cite{Koshino2018}
+\begin{equation}
+T_1=\begin{pmatrix}u_{AA}&u_{AB}\\u_{AB}&u_{AA}\end{pmatrix},\quad
+T_2=\begin{pmatrix}u_{AA}&u_{AB}\varpi^{-\tau}\\u_{AB}\varpi^{\tau}&u_{AA}\end{pmatrix},\quad
+T_3=\begin{pmatrix}u_{AA}&u_{AB}\varpi^{\tau}\\u_{AB}\varpi^{-\tau}&u_{AA}\end{pmatrix},\qquad\varpi=e^{2\pi\ii/3},
+\end{equation}
+where $u_{AA}$ and $u_{AB}$ are the tunneling amplitudes between equal and opposite sublattices (the assignment of $T_j$ to
+$\bm g_j$ follows \code{pybandstructure.koshino}). Parameters (Ref.~\cite{Wei2025}):
+$\theta_{\rm TBG}=1.20^\circ$, $u_{AB}=117$ meV, $u_{AA}=0.7u_{AB}$ (the reduced value mimics lattice relaxation) and
+$\hbar v=0.657$ eV\,nm. The two central (flat) bands are then 24--25 meV wide and separated from the remote bands by
+$\approx44$ meV. The code also reports the Bistritzer--MacDonald coupling $\alpha=u_{AB}/(2\hbar v_0k_D\sin\frac{\theta_{\rm TBG}}2)$
+with the reference value $\hbar v_0k_D=9.905$ eV of Ref.~\cite{BM2011} (\code{TBGParams.alpha}, $\alpha=0.56$), and the
+corresponding first-order estimate of the renormalised Dirac velocity~\cite{BM2011}
+\begin{equation}
+v_{\rm BM}=v\,\frac{1-3\alpha^2}{1+6\alpha^2}
+\label{eq:vstar}
+\end{equation}
+($\hbar v_{\rm BM}=0.010$ eV\,nm, \code{TBGParams.v\_renorm}). Both numbers are used only to set the default broadening $\eta$
+(\cref{sec:numerics}). With the actual $\hbar v$ the coupling would be $u_{AB}/(\hbar v|\bK_1-\bK_2|)=0.50$, so $v_{\rm BM}$ is an order
+of magnitude estimate of the flat-band velocity, not a fitted value. Only the $2n_b=8$ bands closest to neutrality are computed
 (\code{TBGParams.n\_bands}$=4$). The electrostatic environment differs from Ref.~\cite{Wei2025}, which uses an
 isotropic background $\varepsilon_r=10$: here the TBG sits in anisotropic hBN,
 $(\varepsilon_\parallel,\varepsilon_z)=(6.41,3)$, with vacuum between its layers (\code{TBGSLGConfig.eps\_par},
@@ -57,44 +78,34 @@ The graphene (lab) momentum of the plane wave $\bk+\bG$ in either layer is
 \label{eq:labframe}
 \end{equation}
 where $\bm\Gamma^{\rm lab}$ (\code{gamma\_point\_tblg}) lies on the $x$ axis and $|\bK^{\rm lab}_{\rm top,bot}|=4\pi/3a$
-at angles $\pm\theta_{\rm TBG}/2$ (\code{tbg\_model.model\_frame}; checked in
-\code{test\_model\_frame\_dirac\_points}, where the decoupled model has a zero-energy top-layer state at $\bK_1$).
+at angles $\pm\theta_{\rm TBG}/2$ (\code{tbg\_model.model\_frame}). This is checked in
+\code{test\_model\_frame\_dirac\_points}, where the decoupled model has a zero-energy top-layer state at $\bK_1$.
 This relation is what the QTM kinematics needs (\cref{sec:qtmtbg}).
 
-\paragraph{Bloch states.} $H(\bk)u_{n\bk}=E_{n\bk}u_{n\bk}$ with components
-$u_{n\bk}[4g+2\ell+\sigma]$, $g$ the plane-wave index. The states are stored once
+\paragraph{Bloch states.} $H(\bk)u_{n\bk}=E_{n\bk}u_{n\bk}$, where the eigenvector has components
+$u_{n\bk}(\bG,\ell,\sigma)$, stored as \code{u[4 i\_G + 2l + sigma]} with $i_{\bG}$ the index of the plane wave $\bG$. The states are stored once
 (\code{band\_structure.wavefunctions}) and the \emph{same} gauge is used for the form factors, the self-energy
 and the tunneling amplitudes. The chemical potential is fixed by the filling at temperature $T=5$ K
-(charge neutrality by default); $\xi_{n\bk}=E_{n\bk}-\mu$.
+(charge neutrality by default), and energies are measured from it, $\xi_{n\bk}=E_{n\bk}-\mu$.
 
-\paragraph{Layer-resolved form factors.} The density of layer $\ell$ at momentum $\bq+\bG$,
-$\rho_\ell(\bq+\bG)=\sum_{\bk}c^\dagger_{\bk}P_\ell e^{-\ii(\bq+\bG)\cdot\br}c_{\bk+\bq}$, has Bloch matrix elements
-\begin{equation}
-\rho^\ell_{nm}(\bk,\bq;\bG)=\bra{u_{n\bk}}P_\ell\,\hat\tau_{\bG}\ket{u_{m,\bk+\bq}}
-\qquad(\code{densityL[l, n, m, k, q, G]}),
-\label{eq:formfactor}
-\end{equation}
-where $P_\ell$ projects on the two sublattices of layer $\ell$ and $\hat\tau_{\bG}$ shifts the plane-wave
-index; $\bk+\bq$ is folded back onto the mesh (\code{k\_plus\_q\_ind}) and the corresponding shift of the
-plane-wave components is applied by \texttt{pybandstructure}. Completeness:
-$\sum_\ell\rho^\ell_{nm}(\bk,0;0)=\delta_{nm}$ (\code{test\_density\_matrix\_completeness}).
-Only $\bG=0$ is used for $\Sigma$ (\cref{as:head}).
+\paragraph{Layer-resolved form factors.} The Coulomb vertices of the screening and of the self-energy are the matrix
+elements of the density of each layer between Bloch states, $\rho^\ell_{nm}(\bk,\bq)=\bra{u_{n\bk}}P_\ell\,\hat\tau_{\bG_0}\ket{u_{m,\bk+\bq}}$
+(\code{densityL[l, n, m, k, q, G]}), where $P_\ell$ projects on layer $\ell$ and $\hat\tau_{\bG_0}$ compensates the folding of
+$\bk+\bq$ into the first zone. Their derivation from the interaction Hamiltonian, and the reason why the layer index is
+needed, are given in \cref{sec:hint,sec:formfactors}.
 
 \paragraph{Doping and Hartree.} For a doped sample the first-shell Hartree potential
-$V_H=\sum_{|\bG|=G_M}\frac{2\pi e^2}{\varepsilon_H|\bG|}\delta n(\bG)e^{\ii\bG\cdot\br}$ can be solved
-self-consistently (\code{tbg\_model.apply\_hartree}, needs the development version of \texttt{pybandstructure});
-the densities $\delta n(\bG)$ are measured from charge neutrality (regularised occupations), and
+$V_H=\sum_{|\bG|=|\bG_M|}\frac{2\pi e^2}{\varepsilon_H|\bG|}\delta n(\bG)e^{\ii\bG\cdot\br}$, with $\varepsilon_H$ the background
+dielectric constant and $\delta n(\bG)$ the Fourier components of the electron density, can be solved
+self-consistently (\code{tbg\_model.apply\_hartree}, which needs the development version of \texttt{pybandstructure}).
+The densities $\delta n(\bG)$ are measured from charge neutrality (regularised occupations), and
 $G_0$ is then built on the Hartree bands. At neutrality the Hartree potential of the BM model vanishes.
 
 \subsection{Moir\'e Brillouin-zone meshes}
 
-$\bk$ and $\bq$ run over the same $N_s\times N_s$ Wigner--Seitz mesh (\code{n\_sites}), with weights summing to one
-and area $A_{\rm BZ}=\frac{\sqrt3}{2}|\bG_M|^2$; the 2D measure is
-\begin{equation}
-\int\frac{\dd^2q}{(2\pi)^2}f(\bq)\simeq\sum_{\bq}w_{\bq}f(\bq),\qquad w_{\bq}=\frac{A_{\rm BZ}}{(2\pi)^2}\,\text{weight}(\bq)
-\qquad(\code{q\_weights\_from\_band\_structure}),
-\label{eq:qweights}
-\end{equation}
-\emph{without} the spin--valley degeneracy (see \cref{sec:degeneracy}); $\bq=0$ is removed ($V$ diverges and its
-measure vanishes). The band structure is computed for valley $K$; valley $K'$ follows by time reversal
-(\cref{sec:valleys}).
+$\bk$ and $\bq$ run over the same mesh of $N_s\times N_s$ points of the moir\'e Brillouin zone, mapped into its
+Wigner--Seitz cell (\code{n\_sites}$\,=N_s$, \cref{fig:quadrature}a). Every mesh point represents the same fraction
+$1/N_s^2$ of the zone, whose area is $A_{\rm BZ}=\frac{\sqrt3}{2}|\bG_M|^2$. Momentum integrals become sums with the
+weights $w_{\bq}=A_{\rm BZ}/(2\pi N_s)^2$, derived in \cref{eq:qweights}. These weights do not contain the spin--valley
+degeneracy, which is added explicitly where it belongs (in $\chi^0$, \cref{sec:degeneracy}). The band structure is
+computed for valley $K$, and valley $K'$ follows by time reversal (\cref{sec:valleys}).

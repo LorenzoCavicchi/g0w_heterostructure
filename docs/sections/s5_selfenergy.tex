@@ -3,140 +3,621 @@
 \label{sec:selfenergy}
 % ======================================================================
 
-\subsection{Derivation}
+This section derives the self-energy that the package evaluates, \cref{eq:sigma} below, starting from the
+Coulomb Hamiltonian of the stack. The derivation is standard many-body perturbation
+theory~\cite{Hedin1965,HedinLundqvist1970,Mahan,BruusFlensberg,AryasetiawanGunnarsson1998}. What is
+specific to a van der Waals stack is that the interaction is a matrix in the sheet index, and that the
+electrons of a multilayer sample (the two layers of TBG) are coherent superpositions of states living on
+different sheets. These two facts are why the layer-resolved density matrix elements appear in every
+vertex. \Cref{fig:sigma_roadmap} shows the sequence of steps and where each one is done.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=4mm and 5mm, every node/.style={font=\small},
+  st/.style={draw, rounded corners=2pt, align=center, inner sep=3pt, fill=#1, minimum height=11mm},
+  st/.default={gray!8}, >={Stealth[length=2mm]}]
+\node[st=blue!8] (H) {$H_{\rm int}=\frac1{2A}\sum V_{ab}\,n_an_b$\\ \S\ref{sec:hint}};
+\node[st=blue!8, right=of H] (rho) {form factors\\ $\rho^a_{nm}(\bk,\bq)$ \ \S\ref{sec:formfactors}};
+\node[st=orange!10, right=of rho] (F) {exchange with $V$\\ (Wick) \ \S\ref{sec:fock}};
+\node[st=orange!10, right=of F] (GW) {$V\to W$: G$_0$W\\ \cref{eq:sigma_matsubara}, \S\ref{sec:gw}};
+\node[st=red!8, below=7mm of GW] (sum) {spectral rep.\ of $W$,\\ sum over $\ii\Omega_m$ \ \cref{eq:bosesum}};
+\node[st=red!8, left=of sum] (cont) {$\ii\omega_n\to\eps+\ii0^+$\\ \cref{eq:sigma_full_line}};
+\node[st=red!8, left=of cont] (fold) {fold $\nu<0$ onto $\nu>0$\\ \cref{eq:sigma,eq:D}};
+\node[st=green!10, left=of fold] (disc) {quadrature\\ $w_{\bq}$, $t_j$ \ \S\ref{sec:radial}};
+\draw[->] (H) -- (rho); \draw[->] (rho) -- (F); \draw[->] (F) -- (GW); \draw[->] (GW) -- (sum);
+\draw[->] (sum) -- (cont); \draw[->] (cont) -- (fold); \draw[->] (fold) -- (disc);
+\end{tikzpicture}
+\caption{Steps of the derivation of the self-energy. Blue: the interaction and its matrix elements; orange:
+the diagram; red: the frequency structure; green: the numerical evaluation.}
+\label{fig:sigma_roadmap}
+\end{figure}
+
+% ----------------------------------------------------------------------
+\subsection{Interaction Hamiltonian of the stack}
+\label{sec:hint}
+
+Let $\psi_{a\sigma}(\br)$ be the field operator of an electron on sheet $a$, sublattice $\sigma$, at in-plane
+position $\br$, and $n_a(\br)=\sum_\sigma\psi^\dagger_{a\sigma}(\br)\psi_{a\sigma}(\br)$ the number density of
+sheet $a$. Spin and valley indices are suppressed: the interaction is diagonal in both
+(\cref{sec:degeneracy}), and the density operators below include the sum over them. Because the sheets are
+infinitely thin (\cref{as:electro}), the charge density of the stack is $-e\sum_an_a(\br)\delta(z-z_a)$, and
+the electrostatic energy is
+\begin{equation}
+H_{\rm int}=\frac12\sum_{ab}\int\dd^2r\,\dd^2r'\;n_a(\br)\,U_{ab}(\br-\br')\,n_b(\br') ,
+\label{eq:Hint_real}
+\end{equation}
+where $U_{ab}(\br-\br')$ is the energy of an electron at $(\br,z_a)$ in the potential of a second electron at
+$(\br',z_b)$, including all the image charges induced in the dielectrics and in the gates. It depends only
+on $\br-\br'$ because the stack is homogeneous in the plane, and its Fourier transform is precisely the
+kernel of \cref{sec:electrostatics}, $U_{ab}(\br)=A^{-1}\sum_{\bq}V_{ab}(q)e^{\ii\bq\cdot\br}$, where $A$ is the
+normalisation area of the sample. With $n_a(\bq)=\int\dd^2r\,e^{-\ii\bq\cdot\br}n_a(\br)$,
+\begin{equation}
+H_{\rm int}=\frac1{2A}\sum_{\bq\neq0}\sum_{ab}V_{ab}(q)\,:\!n_a(\bq)\,n_b(-\bq)\!: .
+\label{eq:Hint}
+\end{equation}
+The colons denote normal ordering, which removes the interaction of each electron with itself, and the
+$\bq=0$ term is cancelled by the neutralising background of the gates and dopants. The density operator
+obeys $n_a(\bq)^\dagger=n_a(-\bq)$.
+
+\Cref{eq:Hint} is the reason for the layer index. $V_{ab}(q)$ is a genuine matrix: two electrons on the same
+sheet interact through $V_{aa}$, two electrons on sheets a distance $d$ apart through
+$V_{ab}\simeq V_{aa}e^{-\kappa d}$ (\cref{eq:bilayerV}), and a gate or a dielectric interface modifies the
+two differently. The interaction energy of a density fluctuation therefore depends on how its charge is
+distributed among the sheets, and the operator that couples to the Coulomb field of sheet $a$ is the
+density of that sheet, $n_a(\bq)$, not the total density. In a monolayer sample this is trivial, since only one
+sheet is involved, but in TBG a Bloch electron has amplitude on both layers and a transition between two
+Bloch states moves charge on both, with different weights. These weights are the form factors.
+
+% ----------------------------------------------------------------------
+\subsection{Layer-resolved density operator in the band basis}
+\label{sec:formfactors}
+
+In the continuum model of \cref{sec:tbgmodel} the field operator is expanded in plane waves of the moir\'e
+reciprocal lattice,
+\begin{equation}
+\psi_{a\sigma}(\br)=\frac1{\sqrt A}\sum_{\bk\in{\rm BZ}}\sum_{\bG}e^{\ii(\bk+\bG)\cdot\br}\,c_{\bk+\bG,a\sigma},
+\qquad
+c_{\bk+\bG,a\sigma}=\sum_n u_{n\bk}(\bG,a,\sigma)\,c_{n\bk},
+\label{eq:planewave}
+\end{equation}
+where $c_{n\bk}$ annihilates an electron in the Bloch eigenstate $n$ of $H(\bk)$ and $u_{n\bk}(\bG,a,\sigma)$ is the
+component of that eigenvector on plane wave $\bG$, sheet $a$, sublattice $\sigma$ (stored as
+\code{u[4 i\_G + 2a + sigma]}, $i_{\bG}$ the index of $\bG$). The momenta of both layers are measured from the same
+origin $\bm\Gamma^{\rm lab}$ (\cref{eq:labframe}), so this common offset cancels in $\psi^\dagger\psi$. Inserting
+\cref{eq:planewave} into the definition of $n_a(\bq)$ and using $\int\dd^2r\,e^{\ii(\bp'-\bp)\cdot\br}=A\,\delta_{\bp\bp'}$:
+\begin{equation}
+n_a(\bq)=\sum_{\bk\in{\rm BZ}}\sum_{\bG\sigma}c^\dagger_{\bk+\bG,a\sigma}\,c_{\bk+\bq+\bG,a\sigma} .
+\end{equation}
+If $\bk+\bq$ lies outside the first zone we write $\bk+\bq=\bk'+\bG_0$ with $\bk'$ in the zone
+(\cref{fig:quadrature}a), so that $c_{\bk+\bq+\bG,a\sigma}=c_{\bk'+(\bG+\bG_0),a\sigma}$. Expanding both operators in
+Bloch states gives
+\begin{equation}
+n_a(\bq)=\sum_{\bk}\sum_{nm}\rho^a_{nm}(\bk,\bq)\,c^\dagger_{n\bk}\,c_{m,\bk+\bq},
+\label{eq:nq_band}
+\end{equation}
+with the \emph{form factors}
+\begin{equation}
+\rho^a_{nm}(\bk,\bq)=\sum_{\bG\sigma}u^*_{n\bk}(\bG,a,\sigma)\,u_{m\bk'}(\bG+\bG_0,a,\sigma)
+=\bra{u_{n\bk}}P_a\,\hat\tau_{\bG_0}\ket{u_{m,\bk'}} ,
+\label{eq:formfactor}
+\end{equation}
+with $c_{m,\bk+\bq}\equiv c_{m\bk'}$. Here $P_a$ projects on the two sublattices of sheet $a$ and $\hat\tau_{\bG_0}$
+shifts the plane-wave index by $\bG_0$ (\code{densityL[a, n, m, k, q, 0]} in \code{LayerHelpers}; the mesh index of
+$\bk'$ is \code{k\_plus\_q\_ind[q, k]}). The form factor $\rho^a_{nm}(\bk,\bq)$ is the amplitude for the transition
+$m,\bk+\bq\to n,\bk$ to be accompanied by a density change of wavevector $\bq$ on sheet $a$. Three properties are
+used below. Since $n_a(\bq)^\dagger=n_a(-\bq)$,
+\begin{equation}
+n_a(-\bq)=\sum_{\bk}\sum_{nm}\bigl[\rho^a_{nm}(\bk,\bq)\bigr]^*\,c^\dagger_{m,\bk+\bq}\,c_{n\bk} .
+\label{eq:nminusq}
+\end{equation}
+Summing over the sheets of the sample gives the total-density matrix element, which at $\bq=0$ is the overlap of
+two eigenvectors of the same Hamiltonian, $\sum_a\rho^a_{nm}(\bk,0)=\delta_{nm}$
+(\code{test\_density\_matrix\_completeness}). Finally, sample Bloch states have no amplitude on the tip, because
+tip and sample are not tunnel coupled (\cref{as:decoupled}): $\rho^{\rm tip}_{nm}=0$ for sample states, so only
+the sample sheets appear in the vertices of the sample self-energy, while the tip enters through the screening.
+For a momentum transfer $\bq+\bG$ that differs from $\bq$ by a moir\'e vector, the same construction gives the
+umklapp form factors $\rho^a_{nm}(\bk,\bq;\bG)$ (last index of \code{densityL}). Only $\bG=0$ is kept in the
+self-energy (\cref{as:head}). Physically this restricts the momentum transferred to the electron to the first
+moir\'e zone.
+
+For graphene there is one sheet, the plane-wave sum reduces to a single term, and the form factor is the
+spinor overlap $\rho_{ss'}(\bk,\bq)=\braket{u^s_{\bk}}{u^{s'}_{\bk+\bq}}$, whose square is the chirality factor
+of \cref{eq:chirality}.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[>={Stealth[length=2mm]}, every node/.style={font=\small},
+  fermion/.style={thick, postaction={decorate}, decoration={markings, mark=at position .55 with {\arrow{Stealth[length=2mm]}}}},
+  boson/.style={thick, decorate, decoration={snake, amplitude=1.3pt, segment length=5pt}},
+  scr/.style={thick, double, double distance=1.1pt, decorate, decoration={snake, amplitude=1.3pt, segment length=6pt}}]
+% (a) vertex
+\begin{scope}
+\draw[fermion] (-1.3,0) -- (0,0) node[pos=0.35, above] {$m,\bk+\bq$};
+\draw[fermion] (0,0) -- (1.3,0) node[pos=0.65, above] {$n,\bk$};
+\draw[boson] (0,0) -- (0,-1.1) node[below] {sheet $a$, $\bq$};
+\fill (0,0) circle (1.5pt);
+\node at (0,-2.0) {$\rho^a_{nm}(\bk,\bq)$};
+\node at (-1.5,0.85) {(a)};
+\end{scope}
+% (b) self-energy
+\begin{scope}[xshift=4.3cm]
+\draw[fermion] (-1.3,0) -- (0,0) node[pos=0.45, above] {$n',\bk$};
+\draw[fermion] (0,0) -- (4,0);
+\node[below] at (2,-0.05) {$G^0_m(\bk+\bq,\ii\omega_n+\ii\Omega_m)$};
+\draw[fermion] (4,0) -- (5.3,0) node[pos=0.55, above] {$n,\bk$};
+\draw[scr] (0,0) .. controls (0.5,1.7) and (3.5,1.7) .. (4,0);
+\node at (2,1.65) {$W_{ab}(\bq,\ii\Omega_m)$};
+\fill (0,0) circle (1.5pt); \node[below left] at (0,-0.05) {$b$};
+\fill (4,0) circle (1.5pt); \node[below right] at (4,-0.05) {$a$};
+\node at (0,-1.15) {$[\rho^b_{n'm}(\bk,\bq)]^*$};
+\node at (4,-1.15) {$\rho^a_{nm}(\bk,\bq)$};
+\node at (-1.3,0.95) {(b)};
+\end{scope}
+% (c) RPA
+\begin{scope}[yshift=-3.4cm]
+\node at (-1.5,0.75) {(c)};
+\draw[scr] (-1.2,0) -- (0.3,0); \node[below] at (-1.2,-0.1) {$a$}; \node[below] at (0.3,-0.1) {$b$};
+\node at (0.85,0) {$=$};
+\draw[boson] (1.4,0) -- (2.7,0); \node[below] at (1.4,-0.1) {$a$}; \node[below] at (2.7,-0.1) {$b$};
+\node at (3.25,0) {$+$};
+\draw[boson] (3.8,0) -- (4.9,0); \node[below] at (3.8,-0.1) {$a$};
+\draw[fermion] (4.9,0) arc[start angle=180, end angle=0, radius=0.6];
+\draw[fermion] (6.1,0) arc[start angle=0, end angle=-180, radius=0.6];
+\node at (5.5,0) {$\chi^0_{cd}$}; \node[left] at (4.85,0.3) {$c$}; \node[right] at (6.15,0.3) {$d$};
+\draw[scr] (6.1,0) -- (7.6,0); \node[below] at (7.6,-0.1) {$b$};
+\node[right, align=left] at (8.0,0) {$W=V+V\chi^0W$\\[2pt] \footnotesize single wavy line: $V$\\ \footnotesize double wavy line: $W$};
+\end{scope}
+\end{tikzpicture}
+\caption{Diagrams of the G$_0$W self-energy. (a) Coulomb vertex: an electron scatters from $m,\bk+\bq$ to
+$n,\bk$ and the density of sheet $a$ changes by a Fourier component $\bq$, with amplitude given by the form factor
+\eqref{eq:formfactor}. (b) The self-energy \eqref{eq:sigma_matsubara}: the external electron emits a density
+fluctuation on sheet $b$, propagates as $m$, and reabsorbs the fluctuation on sheet $a$. (c) The screened
+interaction $W_{ab}$ is the bare kernel $V_{ab}$ dressed by the polarisation bubbles of all sheets of the stack
+(\cref{eq:epsW}).}
+\label{fig:diagrams}
+\end{figure}
+
+% ----------------------------------------------------------------------
+\subsection{The exchange term: origin of the vertex structure}
+\label{sec:fock}
+
+The structure of the self-energy is already visible at first order in $V$. Insert \cref{eq:formfactor,eq:nminusq}
+in \cref{eq:Hint}:
+\begin{equation}
+H_{\rm int}=\frac1{2A}\sum_{\bq}\sum_{ab}V_{ab}(q)\sum_{\bk\bk'}\sum_{nm n'm'}
+\rho^a_{nm}(\bk,\bq)\bigl[\rho^b_{n'm'}(\bk',\bq)\bigr]^*\;
+c^\dagger_{n\bk}\,c^\dagger_{m',\bk'+\bq}\,c_{n'\bk'}\,c_{m,\bk+\bq},
+\end{equation}
+where normal ordering has moved $c^\dagger_{m',\bk'+\bq}$ to the left at the price of a sign, compensated by
+reversing the order of the two annihilation operators. The first-order self-energy follows from Wick's
+theorem, i.e.\ from the mean-field decoupling of the four-operator product in the non-interacting ground
+state, where $\langle c^\dagger_{m'\bp'}c_{m\bp}\rangle=\delta_{mm'}\delta_{\bp\bp'}\nF(\xi_{m\bp})$. The
+\emph{exchange} contraction pairs $c^\dagger_{m',\bk'+\bq}$ with $c_{m,\bk+\bq}$. It requires $\bk'=\bk$ and
+$m'=m$, and moving $c^\dagger_{m',\bk'+\bq}$ next to $c_{m,\bk+\bq}$ costs one more sign. The other exchange
+contraction, of $c^\dagger_{n\bk}$ with $c_{n'\bk'}$, gives the same operator after relabelling $\bq\to-\bq$,
+$a\leftrightarrow b$, and doubles the result, which cancels the factor $\frac12$. The two \emph{Hartree} contractions,
+inside each density, set $\bq=0$, which is excluded. The result is a one-body operator
+$\sum_{\bk}\sum_{nn'}\Sigma^x_{nn'}(\bk)\,c^\dagger_{n\bk}c_{n'\bk}$ with
+\begin{equation}
+\Sigma^x_{nn'}(\bk)=-\frac1A\sum_{\bq}\sum_m\sum_{ab}\rho^a_{nm}(\bk,\bq)\,V_{ab}(q)\,
+\bigl[\rho^b_{n'm}(\bk,\bq)\bigr]^*\,\nF(\xi_{m,\bk+\bq}) .
+\label{eq:fock}
+\end{equation}
+This is the Fock self-energy. It contains the three ingredients of the G$_0$W formula: the vertex
+$\rho^a_{nm}$ that takes $n,\bk$ to $m,\bk+\bq$ while creating a density fluctuation on sheet $a$, the
+interaction $V_{ab}$ that carries this fluctuation to sheet $b$, and the conjugate vertex
+$[\rho^b_{n'm}]^*$ that brings the electron back to $n',\bk$. The overall minus sign is the fermionic exchange
+sign, and the occupation $\nF(\xi_m)$ states that only occupied intermediate states contribute to exchange.
+When $n\neq n'$ the result is a matrix in band space, because the electron can leave from band $n'$ and
+return to band $n$ through the same intermediate state.
+
+% ----------------------------------------------------------------------
+\subsection{Dynamical screening and the G$_0$W approximation}
+\label{sec:gw}
 \label{sec:sigma_derivation}
 
-In the band basis of the sample, the first-order (GW) self-energy at the fermionic Matsubara frequency
-$\ii\omega_n$ is (Hedin~\cite{Hedin1965}, Mahan~\cite{Mahan})
+The exchange term uses the bare, instantaneous interaction. In the stack, the density fluctuation created at
+the first vertex polarises all the other electrons, of the sample and of the tip, and the field that reaches
+the second vertex is screened and retarded. Hedin's equations~\cite{Hedin1965} express the exact self-energy
+as $\Sigma=\ii GW\Gamma$, with $W=V+VPW$ the screened interaction, $P$ the irreducible polarisability and
+$\Gamma$ the vertex function. The GW approximation sets $\Gamma=1$, so that $P=-\ii GG$ is the RPA bubble and
+$\Sigma=\ii GW$ is the Fock diagram with $V$ replaced by $W$
+(\cref{fig:diagrams}b)~\cite{Hedin1965,HybertsenLouie1986,AryasetiawanGunnarsson1998,Golze2019}. In the one-shot
+G$_0$W variant used here, $G$ is the non-interacting propagator of the sample and $W$ is built from the
+non-interacting polarisability $\chi^0$ (\cref{as:gw}).
+
+\paragraph{Screened interaction in sheet space.} The layer-resolved $W$ is the bare interaction dressed by the
+density response of the stack,
+\begin{gather}
+W_{ab}(\bq,\ii\Omega_m)=V_{ab}(q)+\sum_{cd}V_{ac}(q)\,\chi_{cd}(\bq,\ii\Omega_m)\,V_{db}(q),
+\label{eq:Wdef}\\
+\chi_{cd}(\bq,\ii\Omega_m)=-\frac1A\int_0^\beta\!\dd\tau\,e^{\ii\Omega_m\tau}\bigl\langle T_\tau\,n_c(\bq,\tau)\,n_d(-\bq,0)\bigr\rangle ,
+\nonumber
+\end{gather}
+where $\chi_{cd}$ is the response of the density of sheet $c$ to a potential applied to sheet $d$, $\beta=1/k_BT$
+and $T_\tau$ orders in imaginary time. It is the effective interaction between a density fluctuation of
+wavevector $\bq$ on sheet $a$ and one on sheet $b$, mediated by every polarisable sheet of the junction. In the
+RPA $\chi=\chi^0+\chi^0V\chi$, which gives $W=V+V\chi^0W$ (\cref{fig:diagrams}c) and therefore the matrix
+relation $W=\varepsilon^{-1}V$ of \cref{eq:epsW}. The Lindhard function $\chi^0_{cd}$ of \cref{eq:chi0} is built
+with the same form factors, two per bubble, one for each sheet index.
+
+\paragraph{Matsubara form.} The Feynman rules of the imaginary-time
+formalism~\cite{Mahan,BruusFlensberg,FetterWalecka} assign to diagram~\ref{fig:diagrams}b a propagator
+$G^0_m(\bk+\bq,\ii\omega_n+\ii\Omega_m)$ for the internal line, the interaction $W_{ab}(\bq,\ii\Omega_m)$, a vertex
+factor at each end, a factor $1/(\beta A)$ for the free sums over $\bq$ and over the bosonic frequency, and the
+exchange sign. The result is
 \begin{equation}
-\Sigma_{nn'}(\bk,\ii\omega_n)=-\frac1\beta\sum_{\ii\Omega_m}\int\!\frac{\dd^2q}{(2\pi)^2}\sum_m\sum_{ab}
+\Sigma_{nn'}(\bk,\ii\omega_n)=-\frac1{\beta A}\sum_{\bq}\sum_{\ii\Omega_m}\sum_m\sum_{ab}
 \rho^a_{nm}(\bk,\bq)\,W_{ab}(\bq,\ii\Omega_m)\,\bigl[\rho^b_{n'm}(\bk,\bq)\bigr]^*\,
 G^0_m(\bk+\bq,\ii\omega_n+\ii\Omega_m),
 \label{eq:sigma_matsubara}
 \end{equation}
-with $G^0_m(\bk,z)=1/(z-\xi_{m\bk})$, $a,b$ running over the sheets of the sample (the tip is not an
-intermediate state, \cref{as:decoupled}) and $\rho$ the form factors \eqref{eq:formfactor}. (With $W\to V$ and
-the convergence factor $e^{\ii\Omega0^+}$ this is the Fock term $-\int_{\bq}V\,\nF(\xi_{m\bk+\bq})|\rho|^2$.)
-Split $W=V+W_c$ and use the spectral representation \eqref{eq:spectralrep},
-$W_c(\bq,\ii\Omega)=\int\dd\nu\,S(\bq,\nu)/(\ii\Omega-\nu)$. The bosonic sum is done by contour integration,
+with the fermionic and bosonic Matsubara frequencies $\omega_n=(2n+1)\pi/\beta$ and $\Omega_m=2m\pi/\beta$, and the
+non-interacting propagator $G^0_m(\bp,\ii\omega_n)=1/(\ii\omega_n-\xi_{m\bp})$. Energy is conserved at the vertices,
+which is why the bosonic frequency $\Omega_m$ carried by $W$ appears in the internal electron line. The
+indices $a,b$ run over the sheets of the sample, $m$ over the bands included in the calculation, and
+$\frac1A\sum_{\bq}\to\int\dd^2q/(2\pi)^2$ in the thermodynamic limit.
+
+The sign and the prefactor of \cref{eq:sigma_matsubara} can be checked against \cref{eq:fock}. For a static
+interaction, $W\to V$, the frequency sum involves only the propagator. With the convergence factor
+$e^{\ii\Omega_m0^+}$ that accompanies an equal-time interaction~\cite{Mahan},
 \begin{equation}
-\frac1\beta\sum_{\ii\Omega_m}\frac{1}{(\ii\Omega_m-\nu)(\ii\Omega_m+\ii\omega_n-\xi)}
-=-\frac{\nB(\nu)+\nF(\xi)}{\ii\omega_n+\nu-\xi},
+\frac1\beta\sum_{\ii\Omega_m}\frac{e^{\ii\Omega_m0^+}}{\ii\Omega_m-(\xi_m-\ii\omega_n)}=-\nB(\xi_m-\ii\omega_n)=\nF(\xi_m),
 \end{equation}
-using $\nB(\xi-\ii\omega_n)=-\nF(\xi)$. After the analytic continuation $\ii\omega_n\to\eps+\ii0^+$, the
-correlation self-energy is
+where the last step uses $e^{-\ii\beta\omega_n}=-1$. \Cref{eq:sigma_matsubara} then reduces to \cref{eq:fock}, as it
+must.
+
+% ----------------------------------------------------------------------
+\subsection{Spectral representation of $W$ and the frequency sum}
+
+Split the interaction into its bare and dynamical parts, $W=V+W_c$. The bare part gives the exchange term
+\eqref{eq:fock}, which is not included (\cref{sec:exchange}). The dynamical part is analytic in the complex
+frequency plane away from the real axis and vanishes for $|z|\to\infty$, because the polarisability does. For a finite set of bands $\chi^0(\bq,z)\propto z^{-2}$
+(the $z^{-1}$ term is the expectation value of a commutator of densities, which vanishes, and the $z^{-2}$ term is fixed
+by the f-sum rule~\cite{GiulianiVignale}), while for the unbounded Dirac cone $\chi^0\propto z^{-1}$. It therefore obeys the spectral representation
+\eqref{eq:spectralrep},
 \begin{equation}
-\Sigma^{c}_{nn'}(\bk,\eps)=\int\!\frac{\dd^2q}{(2\pi)^2}\sum_m\sum_{ab}\rho^a_{nm}\,[\rho^b_{n'm}]^*
-\int_{-\infty}^{\infty}\!\dd\nu\;S_{ab}(\bq,\nu)\,\frac{\nB(\nu)+\nF(\xi_m)}{\eps+\nu-\xi_m+\ii0^+},
-\qquad\xi_m\equiv\xi_{m,\bk+\bq},
+W_c(\bq,z)=\int_{-\infty}^{\infty}\dd\nu\,\frac{S(\bq,\nu)}{z-\nu},\qquad
+S(\bq,\nu)=\frac{\ii}{2\pi}\bigl[\WR(\bq,\nu)-\WR(\bq,\nu)^\dagger\bigr],
+\label{eq:Wc_spectral}
+\end{equation}
+which gives the retarded function for $\Imm z>0$, the advanced one for $\Imm z<0$ (using
+$W^{\rm A}=(\WR)^\dagger$), and the Matsubara function at $z=\ii\Omega_m$. Inserted in
+\cref{eq:sigma_matsubara}, the only dependence on $\ii\Omega_m$ is in the product of two simple poles, and the
+frequency sum is
+\begin{equation}
+\frac1\beta\sum_{\ii\Omega_m}\frac{1}{(\ii\Omega_m-\nu)(\ii\Omega_m+\ii\omega_n-\xi_m)}
+=-\frac{\nB(\nu)+\nF(\xi_m)}{\ii\omega_n+\nu-\xi_m} .
+\label{eq:bosesum}
+\end{equation}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[>={Stealth[length=2mm]}, every node/.style={font=\small}, scale=0.9]
+\draw[->] (-3.4,0) -- (3.6,0) node[right] {$\Ree z$};
+\draw[->] (0,-2.8) -- (0,2.9) node[above] {$\Imm z$};
+
+\draw[thick, red!70!black] (1.6,0) node {$\times$} node[below=2pt] {$\nu$};
+\draw[thick, red!70!black] (-1.4,-1.5) node {$\times$} node[below=2pt] {$\xi_m-\ii\omega_n$};
+\draw[thick, blue!40, ->] (-0.3,2.7) -- (-0.3,-2.7);
+\draw[thick, blue!40, ->] (0.3,-2.7) -- (0.3,2.7) node[right, pos=0.85, blue!60!black] {$C$};
+\draw[thick, gray, ->] (2.5,1.95) arc[start angle=38, end angle=322, radius=3.15];
+\node[gray] at (2.7,2.35) {$C_\infty$};
+\draw[thick, red!70!black, <-] (1.6,0) circle (0.3);
+\draw[thick, red!70!black, <-] (-1.4,-1.5) circle (0.3);
+\foreach \y in {-2.4,-1.8,-1.2,-0.6,0,0.6,1.2,1.8,2.4} \fill[blue!70!black] (0,\y) circle (2.2pt);
+\node[blue!70!black, left] at (-0.4,2.1) {$\ii\Omega_m$};
+\end{tikzpicture}
+\caption{Contour for the bosonic sum \eqref{eq:bosesum}. The Bose function $\nB(z)$ has simple poles of residue
+$1/\beta$ at $z=\ii\Omega_m$ (blue dots), so the sum is $\oint_C\frac{\dd z}{2\pi\ii}\nB(z)F(z)$ along $C$. Deforming $C$
+into the large circle $C_\infty$, where the integrand vanishes, leaves the clockwise circles around the two poles of
+$F$ (red crosses).}
+\label{fig:contour}
+\end{figure}
+
+The derivation is the standard contour argument~\cite{Mahan,BruusFlensberg} (\cref{fig:contour}). Write
+$F(z)=1/[(z-\nu)(z+\ii\omega_n-\xi_m)]$. The function $\nB(z)=1/(e^{\beta z}-1)$ has simple poles with residue
+$1/\beta$ at $z=\ii\Omega_m$, hence $\frac1\beta\sum_mF(\ii\Omega_m)=\oint_C\frac{\dd z}{2\pi\ii}\nB(z)F(z)$ along a contour
+$C$ that encloses the imaginary axis counter-clockwise. Since $F\sim z^{-2}$ the contour can be opened onto a circle at
+infinity, which contributes nothing, and what remains are the two poles of $F$, encircled clockwise:
+\begin{equation}
+\frac1\beta\sum_{\ii\Omega_m}F(\ii\Omega_m)=-\frac{\nB(\nu)}{\nu+\ii\omega_n-\xi_m}-\frac{\nB(\xi_m-\ii\omega_n)}{\xi_m-\ii\omega_n-\nu}.
+\end{equation}
+Because $\omega_n$ is a fermionic frequency, $\nB(\xi_m-\ii\omega_n)=1/(-e^{\beta\xi_m}-1)=-\nF(\xi_m)$, and the two terms
+combine into \cref{eq:bosesum}. Using it in \cref{eq:sigma_matsubara} with $W\to W_c$, the two minus signs cancel:
+\begin{equation}
+\Sigma^c_{nn'}(\bk,\ii\omega_n)=\frac1A\sum_{\bq}\sum_m\sum_{ab}\rho^a_{nm}(\bk,\bq)\bigl[\rho^b_{n'm}(\bk,\bq)\bigr]^*
+\int_{-\infty}^{\infty}\!\dd\nu\;S_{ab}(\bq,\nu)\,\frac{\nB(\nu)+\nF(\xi_m)}{\ii\omega_n+\nu-\xi_m},
+\end{equation}
+with the shorthand $\xi_m\equiv\xi_{m,\bk+\bq}$ for the energy of the intermediate state.
+
+% ----------------------------------------------------------------------
+\subsection{Analytic continuation to real frequency}
+
+The Matsubara self-energy now depends on $\ii\omega_n$ only through the denominator, since the factor
+$e^{-\ii\beta\omega_n}=-1$ has already been used. It is the value at $z=\ii\omega_n$ of a function analytic off the real axis
+and decaying at infinity, and this continuation is unique~\cite{BaymMermin1961}. The retarded self-energy, which is the
+one that enters the Dyson equation for the spectral function, is obtained with $\ii\omega_n\to\eps+\ii0^+$:
+\begin{equation}
+\Sigma^{c}_{nn'}(\bk,\eps)=\int\!\frac{\dd^2q}{(2\pi)^2}\sum_m\sum_{ab}\rho^a_{nm}(\bk,\bq)\,\bigl[\rho^b_{n'm}(\bk,\bq)\bigr]^*
+\int_{-\infty}^{\infty}\!\dd\nu\;S_{ab}(\bq,\nu)\,\frac{\nB(\nu)+\nF(\xi_m)}{\eps+\nu-\xi_m+\ii0^+} .
 \label{eq:sigma_full_line}
 \end{equation}
-which is Eqs.~(37) and (39) of Ref.~\cite{Wei2025} with the layer index in place of the moir\'e $\bG$ index.
-Using $S(\bq,-\nu)=-S(-\bq,\nu)^T$ (\cref{eq:spectralrep}) together with the Onsager relation
-$S(-\bq,\nu)^T=S(\bq,\nu)$ of a time-reversal-symmetric sample (\cref{sec:valleys}), i.e.\ $S(\bq,-\nu)=-S(\bq,\nu)$,
-and $\nB(-\nu)=-1-\nB(\nu)$, the negative frequencies are folded onto $\nu>0$:
+This is Eqs.~(37) and (39) of Ref.~\cite{Wei2025}, with the sheet index in place of the moir\'e $\bG$ index. In
+\cref{eq:sigma_full_line} $\nu$ runs over the whole real axis, and the spectral density at negative $\nu$ is not stored
+by the code. The next step shows that it is not needed.
+
+% ----------------------------------------------------------------------
+\subsection{Folding onto positive frequencies}
+
+\paragraph{Symmetry of $S$.} Two properties of the response of the stack fix $S$ at $\nu<0$. First, the density
+$n_a(\br)$ is a Hermitian operator, so the retarded response to a real potential is real in real space and time.
+In Fourier space this reads $\WR_{ab}(\bq,-\nu)=[\WR_{ab}(-\bq,\nu)]^*$, and inserting it in \cref{eq:Wc_spectral},
+\begin{equation}
+S(\bq,-\nu)=\frac{\ii}{2\pi}\Bigl[\WR(-\bq,\nu)^*-\WR(-\bq,\nu)^T\Bigr]
+=-\Bigl\{\frac{\ii}{2\pi}\bigl[\WR(-\bq,\nu)-\WR(-\bq,\nu)^\dagger\bigr]\Bigr\}^T=-S(-\bq,\nu)^T .
+\end{equation}
+Second, for a time-reversal-symmetric sample the Onsager relation $\chi^0(-\bq,\nu)=\chi^0(\bq,\nu)^T$
+holds~\cite{GiulianiVignale} (for TBG it requires both valleys, \cref{eq:valleysym}). Since $V$ is symmetric,
+$W(-\bq,\nu)=W(\bq,\nu)^T$ and $S(-\bq,\nu)^T=S(\bq,\nu)$. Together,
+\begin{equation}
+S(\bq,-\nu)=-S(\bq,\nu):
+\label{eq:Sodd}
+\end{equation}
+the spectral density is odd in frequency, positive semidefinite at $\nu>0$ (absorption by the stack) and negative
+semidefinite at $\nu<0$.
+
+\paragraph{Folding.} Split the $\nu$ integral of \cref{eq:sigma_full_line} at $\nu=0$ and substitute $\nu=-\omega$ in the negative
+half. With \cref{eq:Sodd}, $\nB(-\omega)=-1-\nB(\omega)$ and $1-\nF(\xi)=\nF(-\xi)$,
+\begin{align}
+\int_{-\infty}^0\!\dd\nu\,S(\bq,\nu)\frac{\nB(\nu)+\nF(\xi_m)}{\eps+\nu-\xi_m+\ii0^+}
+&=\int_0^\infty\!\dd\omega\,\bigl[-S(\bq,\omega)\bigr]\frac{-1-\nB(\omega)+\nF(\xi_m)}{\eps-\omega-\xi_m+\ii0^+}\nonumber\\
+&=\int_0^\infty\!\dd\omega\,S(\bq,\omega)\frac{\nB(\omega)+\nF(-\xi_m)}{\eps-\omega-\xi_m+\ii0^+} .
+\end{align}
+Adding the positive half, which is unchanged,
+\begin{multline}
+\Sigma^c_{nn'}(\bk,\eps)=\int\!\frac{\dd^2q}{(2\pi)^2}\sum_m\sum_{ab}\rho^a_{nm}\bigl[\rho^b_{n'm}\bigr]^*\\
+\times\int_0^\infty\!\dd\omega\;S_{ab}(\bq,\omega)\left[\frac{\nB(\omega)+\nF(-\xi_m)}{\eps-\xi_m-\omega+\ii0^+}
++\frac{\nB(\omega)+\nF(\xi_m)}{\eps-\xi_m+\omega+\ii0^+}\right].
+\label{eq:sigma_folded}
+\end{multline}
+The code writes the bracket with the opposite sign of the denominators, which makes the sign of $\Imm\Sigma$ manifest.
+Replacing the integral over $\bq$ by the quadrature of \cref{sec:radial}, the infinitesimal $0^+$ by a small but finite
+$\eta_\Sigma$, and the upper limit by the largest frequency $\omega_{\max}$ of the grid on which $S$ is known,
 \begin{equation}
 \boxed{\Sigma_{nn'}(\bk,\eps)=-\sum_{\bq}w_{\bq}\sum_m\sum_{ab}\rho^a_{nm}(\bk,\bq)\bigl[\rho^b_{n'm}(\bk,\bq)\bigr]^*
 \int_0^{\omega_{\max}}\!\dd\omega\;S_{ab}(\bq,\omega)\,\mathcal D_m(\omega,\eps)}
 \label{eq:sigma}
 \end{equation}
 \begin{equation}
-\mathcal D_m(\omega,\eps)=\frac{A^+_m(\omega)}{\omega+\xi_m-\eps-\ii\eta_\Sigma}+\frac{A^-_m(\omega)}{-\omega+\xi_m-\eps-\ii\eta_\Sigma},
-\qquad A^\pm_m=\nB(\omega)+\nF(\mp\xi_m)\ \xrightarrow{T=0}\ \Theta(\pm\xi_m).
+\mathcal D_m(\omega,\eps)=\frac{N^+_m(\omega)}{\omega+\xi_m-\eps-\ii\eta_\Sigma}+\frac{N^-_m(\omega)}{-\omega+\xi_m-\eps-\ii\eta_\Sigma},
 \label{eq:D}
 \end{equation}
-The first term describes an electron in an empty state ($\xi_m>0$) of energy $\eps=\xi_m+\omega$ that has emitted
-a boson of energy $\omega$; the second a hole ($\xi_m<0$) at $\eps=\xi_m-\omega$. $\eta_\Sigma$ is a small
-broadening of the resolvents (the $0^+$). \Cref{eq:sigma} is implemented in
-\begin{itemize}
-\item \code{compute\_self\_energy\_band\_matrix} (TBG, band matrix, direct frequency contraction) and
-      \code{compute\_self\_energy\_band\_matrix\_kernel} (same, fast route, \cref{sec:kernel});
-\item \code{compute\_self\_energy\_full\_frequency\_pybandstructure} (TBG, diagonal $n=n'$, returned in the layer basis
-      as the Hadamard product $\rho^a\rho^{b*}\circ\int S\mathcal D$, whose sum over $(a,b)$ is $\Sigma_{nn}$);
-\item \code{slg\_self\_energy.sigma\_full\_frequency\_fast}, \code{sigma\_full\_frequency\_kernel} (graphene,
-      radial $q$ grid with angular average, \cref{sec:radial}).
-\end{itemize}
+\begin{equation}
+N^\pm_m(\omega)=\nB(\omega)+\nF(\mp\xi_m)\ \xrightarrow{T=0}\ \Theta(\pm\xi_m).
+\label{eq:Npm}
+\end{equation}
+Here $w_{\bq}$ is the weight of the momentum quadrature (\cref{sec:radial}), $\xi_m=\xi_{m,\bk+\bq}$ is the energy of the
+intermediate state measured from the chemical potential, $N^\pm_m$ are its population factors, and the label $\Sigma$
+stands for the correlation part $\Sigma^c$ from now on. \Cref{eq:sigma} is implemented in
+\code{compute\_self\_energy\_band\_matrix} (TBG, band matrix, direct frequency contraction) and in its fast version
+\code{compute\_self\_energy\_band\_matrix\_kernel} (\cref{sec:kernel}). The diagonal elements alone are computed by
+\code{compute\_self\_energy\_full\_frequency\_pybandstructure}, which returns the summand of every pair $(a,b)$ separately
+so that their sum is $\Sigma_{nn}$. For graphene the same formula is evaluated by \code{slg\_self\_energy.sigma\_full\_frequency\_fast}
+and \code{sigma\_full\_frequency\_kernel} on the radial grid of \cref{sec:radial}.
 
+% ----------------------------------------------------------------------
+\subsection{Physical content}
+\label{sec:sigma_physics}
+
+At $T=0$ the Bose factor vanishes for $\omega>0$ and the populations become step functions. \Cref{eq:sigma_folded} then
+reads
+\begin{equation}
+\Sigma_{nn'}(\bk,\eps)=\int\!\frac{\dd^2q}{(2\pi)^2}\sum_m\sum_{ab}\rho^a_{nm}\bigl[\rho^b_{n'm}\bigr]^*\int_0^\infty\!\dd\omega\,
+S_{ab}(\bq,\omega)\left[\frac{\Theta(\xi_m)}{\eps-\xi_m-\omega+\ii0^+}+\frac{\Theta(-\xi_m)}{\eps-\xi_m+\omega+\ii0^+}\right],
+\label{eq:sigmaT0}
+\end{equation}
+the form familiar from GW calculations in solids~\cite{HybertsenLouie1986,AryasetiawanGunnarsson1998}. Its
+anti-Hermitian part follows from $\Imm(x+\ii0^+)^{-1}=-\pi\delta(x)$. For the diagonal element,
+\begin{equation}
+-\Imm\Sigma_{nn}(\bk,\eps)=\pi\int\!\frac{\dd^2q}{(2\pi)^2}\sum_m\Bigl[\Theta(\xi_m)\,\Theta(\eps-\xi_m)\,\mathcal S_{nm}(\bq,\eps-\xi_m)
++\Theta(-\xi_m)\,\Theta(\xi_m-\eps)\,\mathcal S_{nm}(\bq,\xi_m-\eps)\Bigr],
+\label{eq:ImSigmaT0}
+\end{equation}
+with $\mathcal S_{nm}(\bq,\omega)=\sum_{ab}\rho^a_{nm}S_{ab}(\bq,\omega)[\rho^b_{nm}]^*\ge0$, the spectral density of $W$ seen through
+the vertex of the transition $n\to m$. This is Fermi's golden rule (\cref{fig:processes}). An electron added at energy
+$\eps>0$ decays into an empty state $m,\bk+\bq$ of lower energy $\xi_m\in(0,\eps)$ by emitting a boson (a plasmon or a
+particle--hole pair) of momentum $-\bq$ and energy $\omega=\eps-\xi_m$, and the rate is $2|\Imm\Sigma|$. A hole added at
+$\eps<0$ decays in the mirror way into an occupied state with $\eps<\xi_m<0$. An electron at the Fermi level cannot
+decay, $\Imm\Sigma(\eps=0)=0$, because the phase space of both processes closes. The real part of $\Sigma$ follows from
+the imaginary part by a Kramers--Kronig relation and describes the energy shift of the quasiparticle by virtual
+emission and reabsorption.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[>={Stealth[length=2mm]}, every node/.style={font=\small},
+  boson/.style={thick, decorate, decoration={snake, amplitude=1.3pt, segment length=5pt}}]
+\begin{scope}
+\fill[blue!8] (0,-1.6) rectangle (3.6,0); \node[blue!60!black] at (1.8,-1.25) {occupied};
+\draw[dashed] (-0.2,0) -- (3.8,0) node[right] {$\mu$ ($\xi=0$)};
+\draw[->] (-0.2,-1.6) -- (-0.2,2.4) node[above] {energy};
+\draw[thick] (0.6,1.9) -- (1.2,1.9) node[right] {$\eps$};
+\draw[thick] (2.2,0.7) -- (2.8,0.7) node[right] {$\xi_{m,\bk+\bq}>0$};
+\draw[->, thick, red!70!black] (1.0,1.85) -- (2.3,0.78);
+\draw[boson, red!70!black] (1.65,1.3) -- (1.9,2.3) node[above right, inner sep=1pt] {$\omega=\eps-\xi_m$};
+\node at (1.8,-2.05) {(a) electron, $\Theta(\xi_m)$ term};
+\end{scope}
+\begin{scope}[xshift=6.6cm]
+\fill[blue!8] (0,-1.6) rectangle (3.6,0); 
+\draw[dashed] (-0.2,0) -- (3.8,0) node[right] {$\mu$};
+\draw[->] (-0.2,-1.6) -- (-0.2,2.4) node[above] {energy};
+\draw[thick] (0.6,-1.3) -- (1.2,-1.3) node[below right] {$\eps$};
+\draw[thick] (2.2,-0.4) -- (2.8,-0.4) node[right] {$\xi_{m,\bk+\bq}<0$};
+\draw[->, thick, red!70!black] (1.0,-1.25) -- (2.3,-0.47);
+\draw[boson, red!70!black] (1.65,-0.85) -- (1.9,0.9) node[above right, inner sep=1pt] {$\omega=\xi_m-\eps$};
+\node at (1.8,-2.05) {(b) hole, $\Theta(-\xi_m)$ term};
+\end{scope}
+\end{tikzpicture}
+\caption{The two terms of $\mathcal D_m$ at $T=0$. (a) An electron added at $\eps>0$ relaxes into an empty state $m$ and
+emits a boson of energy $\eps-\xi_m$. (b) A hole added at $\eps<0$ relaxes into an occupied state (the hole moves up) and
+emits a boson of energy $\xi_m-\eps$. The bosonic spectral weight at that energy, $S(\bq,\omega)$, sets the decay rate.}
+\label{fig:processes}
+\end{figure}
+
+\Cref{fig:sigma_anatomy} shows how this works numerically for the conduction band of doped graphene at $|\bk|=1.5k_F$.
+The spectral density of the sample sheet (panel a) has two structures: the sharp optical plasmon of the junction at
+small $q$ and the broad interband continuum at $\omega>\hbar v_Fq$. For a given $\eps$, the electron term of
+\cref{eq:ImSigmaT0} samples $S$ on the region of the $(q,\omega)$ plane allowed by energy conservation and Pauli blocking
+(cyan). Where this region first meets the plasmon branch, $-\Imm\Sigma$ rises steeply: this is the emission edge
+analysed in \cref{sec:edge}. Panel (b) resolves $-\Imm\Sigma$ by momentum transfer and shows that the edge is built by
+$q\lesssim0.6k_F$, while larger momenta contribute only a broad background. Panel (c) separates the terms of
+$\mathcal D_m$. The electron term ($m$ in the conduction band, $\xi_m>0$) gives the whole of $-\Imm\Sigma$ at $\eps>0$. Below the
+Fermi level the dominant term is the hole term of the partially filled conduction band ($-E_F<\xi_m<0$): a hole at
+$\eps\lesssim-100$ meV can relax inside the Fermi sea by emitting a plasmon, while closer to $\eps=0$ only bosons of small
+energy, and hence small weight, are available. The completely filled valence band ($s'=-$) contributes only at the
+lower end of the window.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_sigma_anatomy.png}
+\caption{Anatomy of \cref{eq:sigma} for the conduction band of the SLG sample at $|\bk|=1.5k_F$ (SLG\,$|$\,1 nm
+hBN\,$|$\,SLG, both sheets at $10^{12}$ cm$^{-2}$, $\eta=\eta_\Sigma=1$ meV). (a) Spectral density $S_{SS}(q,\omega)$ of the
+sample sheet; the cyan region is the set of $(q,\omega)$ that an electron at $\eps=113$ meV, the peak of $-\Imm\Sigma$
+(dashed in b and c), can reach by emitting a boson into an empty conduction state. (b) Contribution of each momentum
+transfer to $-\Imm\Sigma$, per unit $q/k_F$ (dotted: bare energy $\xi_{\bk}=58$ meV). (c) $-\Imm\Sigma$ split into the
+terms of $\mathcal D_m$, labelled by the intermediate band $s'$, and $\Ree\Sigma$. The decomposition reproduces the
+library routine to $10^{-16}$ (\code{scripts/plot\_notes\_selfenergy.py}).}
+\label{fig:sigma_anatomy}
+\end{figure}
+
+% ----------------------------------------------------------------------
+\subsection{Momentum and frequency quadrature}
+\label{sec:radial}
+
+\Cref{eq:sigma} is evaluated as a finite double sum,
+\begin{equation}
+\Sigma_{nn'}(\bk,\eps)\simeq-\sum_{\bq}w_{\bq}\sum_{m}\sum_{ab}\rho^a_{nm}(\bk,\bq)\bigl[\rho^b_{n'm}(\bk,\bq)\bigr]^*
+\sum_{j=1}^{n_\omega}t_j\,S_{ab}(\bq,\omega_j)\,\mathcal D_m(\omega_j,\eps),
+\label{eq:sigma_discrete}
+\end{equation}
+where $\omega_j$ are the points of the frequency grid and $t_j$ their trapezoidal weights,
+$t_j=\frac12(\omega_{j+1}-\omega_{j-1})$ with half intervals at the two ends (\code{compat.trapezoid\_weights}). The momentum
+weights $w_{\bq}$ (in nm$^{-2}$) are defined such that $\sum_{\bq}w_{\bq}f(\bq)$ approximates $\int\dd^2q\,f(\bq)/(2\pi)^2$. Their
+construction depends on the sample (\cref{fig:quadrature}).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/fig_quadrature.png}
+\caption{Momentum quadratures. (a) TBG: $\bk$ and $\bq$ run over the same $N_s\times N_s$ mesh of the moir\'e Brillouin
+zone, every point with the same weight. When $\bk+\bq$ falls outside the zone it is folded back by a moir\'e vector
+$\bG_0$, which the form factor \eqref{eq:formfactor} compensates by shifting the plane-wave index. (b) Graphene: the
+spectral density depends only on $q=|\bq|$, so $\bq$ is sampled on rings of radius $q_i$ around the external momentum,
+with $n_\vartheta$ directions per ring, and the intermediate states sit at $\bk-\bq$.}
+\label{fig:quadrature}
+\end{figure}
+
+\paragraph{Moir\'e mesh (TBG).} A finite periodic sample with $N_k$ moir\'e unit cells of area $A_{\rm cell}$ has
+$A=N_kA_{\rm cell}$ and $N_k$ allowed momenta in the zone, and the area of the zone is
+$A_{\rm BZ}=(2\pi)^2/A_{\rm cell}=\frac{\sqrt3}{2}|\bG_M|^2$. The exact sum of \cref{eq:sigma_matsubara} is therefore
+\begin{equation}
+\frac1A\sum_{\bq}f(\bq)=\frac{A_{\rm BZ}}{(2\pi)^2}\,\frac1{N_k}\sum_{\bq}f(\bq)\ \xrightarrow{N_k\to\infty}\ \int_{\rm BZ}\frac{\dd^2q}{(2\pi)^2}f(\bq),
+\qquad
+w_{\bq}=\frac{A_{\rm BZ}}{(2\pi)^2}\,\mathrm{weight}(\bq)
+\label{eq:qweights}
+\end{equation}
+(\code{q\_weights\_from\_band\_structure}). Here $\mathrm{weight}(\bq)$ is the fraction of the zone attributed to the mesh
+point by \texttt{pybandstructure} (\code{q\_sample.weights}, normalised to one). For the $N_s\times N_s$ Wigner--Seitz mesh
+used here $N_k=N_s^2$ and every point has $\mathrm{weight}=1/N_s^2$, so $w_{\bq}=A_{\rm BZ}/(2\pi N_s)^2$ and
+$\sum_{\bq}w_{\bq}=1/A_{\rm cell}$. The weight contains no spin or valley degeneracy (\cref{sec:degeneracy}). The external
+momentum $\bk$ must itself be a mesh point, so that $\bk+\bq$ folds onto the mesh. The point $\bq=0$ is removed:
+there $V$ diverges, but the singularity is integrable ($\int\dd^2q/q\propto\int\dd q$), and dropping the cell around
+$\bq=0$ changes $\Sigma$ by an amount proportional to its linear size $|\bG_M|/N_s$, which vanishes as the mesh is refined.
+
+\paragraph{Radial grid (isotropic samples).} For graphene $S(\bq,\omega)$ depends only on $|\bq|$, while the intermediate
+energy $\xi^{s'}_{\bk-\bq}=s'\hbar v_F|\bk-\bq|-E_F$ and the chirality factor depend on the direction of $\bq$ relative to
+$\bk$. The measure is split into a radial and an angular part,
+\begin{equation}
+\int\frac{\dd^2q}{(2\pi)^2}f(\bk,\bq)=\int_0^{q_{\max}}\frac{q\,\dd q}{2\pi}\,\bigl\langle f(\bk,\bq(\vartheta))\bigr\rangle_\vartheta,
+\qquad\langle f\rangle_\vartheta=\frac1{2\pi}\int_0^{2\pi}\!\dd\vartheta\,f\simeq\frac1{n_\vartheta}\sum_{j=0}^{n_\vartheta-1}f(\vartheta_j),
+\label{eq:radial}
+\end{equation}
+with $\vartheta_j=2\pi j/n_\vartheta$ (\code{make\_angular\_quadrature}) and the radial weights $w_{q_i}=q_i\,\Delta q_i/2\pi$,
+$\Delta q_i=\frac12(q_{i+1}-q_{i-1})$ and half intervals at the ends (\code{make\_radial\_q\_weights}). The code places
+the intermediate state at $\bk-\bq$ instead of $\bk+\bq$, which is equivalent because $\bq\to-\bq$ leaves both the measure
+and $S(|\bq|,\omega)$ unchanged. The angular average cannot be skipped: sampling only $\vartheta=0$ (collinear $\bq$)
+computes a different quantity, not a coarse version of the same one. Defaults: $q\in[0.02,3]k_F$ with $n_q=96$,
+$n_\vartheta=64$, and $\omega\in(0,2.8E_F]$ with $n_\omega=480$.
+
+% ----------------------------------------------------------------------
 \subsection{Causality}
 \label{sec:passivity}
 
 The anti-Hermitian part of \cref{eq:sigma} is, for $\eta_\Sigma\to0$,
 \begin{equation}
-\frac{\Sigma-\Sigma^\dagger}{2\ii}=-\pi\sum_{\bq}w_{\bq}\sum_m\Bigl[A^+_m\,R_m S(\bq,\eps-\xi_m)R_m^\dagger
-+A^-_m\,R_mS(\bq,\xi_m-\eps)R_m^\dagger\Bigr],\qquad (R_m)_{na}=\rho^a_{nm}(\bk,\bq),
+\frac{\Sigma-\Sigma^\dagger}{2\ii}=-\pi\sum_{\bq}w_{\bq}\sum_m\Bigl[N^+_m\,\mathcal F_m\,S(\bq,\eps-\xi_m)\,\mathcal F_m^\dagger
++N^-_m\,\mathcal F_m\,S(\bq,\xi_m-\eps)\,\mathcal F_m^\dagger\Bigr],
 \end{equation}
-a sum of negative semidefinite matrices when $S\succeq0$ and $A^\pm\ge0$. Hence $\Imm\Sigma_{nn}\le0$ and the
-spectral function below is positive. This holds exactly with the Hermitian spectral density and is verified
-numerically (\code{spectral.is\_passive}).
+with the vertex matrix $(\mathcal F_m)_{na}=\rho^a_{nm}(\bk,\bq)$, the populations evaluated at the frequency where $S$ is
+taken,
+and $S(\bq,\omega)$ understood to vanish for $\omega<0$. It is a sum of negative semidefinite matrices when
+$S\succeq0$ and $N^\pm\ge0$. Hence $\Imm\Sigma_{nn}\le0$ and the spectral function of \cref{sec:spectral} is positive. This
+holds exactly with the Hermitian spectral density of \cref{eq:Wc_spectral} and is verified numerically
+(\code{spectral.is\_passive}).
 
-\subsection{Momentum integration}
-\label{sec:radial}
-
-\paragraph{Moir\'e mesh (TBG).} $\bq$ runs over the full 2D mesh with the weights \eqref{eq:qweights}; the
-direction of $\bq$ is part of the sum and $\bk+\bq$ is folded onto the same mesh, so the external $\bk$ must be a
-mesh point. Removing $\bq=0$ is harmless: the integrand vanishes as $q\to0$ because
-$\int\dd^2q\,V(q)\sim\int q\,\dd q/q$ is finite.
-
-\paragraph{Radial grid (isotropic samples).} For graphene $S(\bq,\omega)$ depends on $|\bq|$ only, and the 2D
-measure is split as
-\begin{equation}
-\int\frac{\dd^2q}{(2\pi)^2}f(\bk,\bq)=\int_0^{q_{\max}}\frac{q\,\dd q}{2\pi}\,\bigl\langle f(\bk,\bq(\vartheta))\bigr\rangle_\vartheta,
-\qquad\langle\cdot\rangle_\vartheta=\frac1{2\pi}\int_0^{2\pi}\dd\vartheta ,
-\label{eq:radial}
-\end{equation}
-trapezoidal weights $w_q=q\Delta q/2\pi$ (\code{make\_radial\_q\_weights}) and $n_\vartheta=64$ uniform angles
-(\code{make\_angular\_quadrature}). The angular average must be done: the intermediate energy
-$\xi^s_{\bk-\bq}=s\hbar v_F|\bk-\bq|-E_F$ and the chirality factor depend on $\vartheta$. Sampling only
-$\vartheta=0$ (collinear) is a different quantity, not a coarse approximation. Defaults: $q\in[0.02,3]k_F$
-($n_q=96$), $\omega\in(0,2.8E_F]$ ($n_\omega=480$).
-
+% ----------------------------------------------------------------------
 \subsection{Spin and valley degeneracy}
 \label{sec:degeneracy}
 
-The polarisation bubble \eqref{eq:chi0} sums over the $g=4$ flavours of the particle--hole pair, so $g$ enters
-$\chi^0$, $\varepsilon$ and $W$. In \cref{eq:sigma_matsubara} the internal electron line carries the flavour of
-the external electron (the Coulomb vertex conserves spin and, for $|\bq|\ll|\bK|$, valley), so there is no free
-flavour sum and \emph{no} degeneracy factor in $w_{\bq}$; including one would make $\Sigma$ four times too large.
-Spin and valley enter the self-energy only through the screening of $W$.
+The Coulomb potential varies on the scale of the interlayer distance, much longer than the lattice constant, so a
+scattering event conserves spin and does not transfer an electron between valleys, which would require a momentum
+$|\bK-\bK'|\sim1/a$ at which $V$ is negligible~\cite{Kotov2012}. The polarisation bubble \eqref{eq:chi0} is a closed fermion
+loop and sums over the $g=4$ flavours of the particle--hole pair, so $g$ enters $\chi^0$, $\varepsilon$ and $W$. In
+\cref{eq:sigma_matsubara}, instead, the internal electron line is the continuation of the external one and carries its
+flavour. There is no free flavour sum and hence \emph{no} degeneracy factor in $w_{\bq}$. Including one would make
+$\Sigma$ four times too large. Spin and valley enter the self-energy only through the screening.
 
+% ----------------------------------------------------------------------
 \subsection{What is not included: exchange and double counting}
 \label{sec:exchange}
 
-Only the correlation part is computed: $S$ is the spectral density of $W$, and $\Imm V=0$ for a static
-background, so the bare-exchange (Fock) self-energy
-$\Sigma^x_{nn'}=-\sum_{\bq}w_{\bq}\sum_m\nF(\xi_m)\sum_{ab}\rho^a_{nm}V_{ab}(\bq)[\rho^b_{n'm}]^*$ is absent.
-$\Sigma^x$ is real and static: it shifts and reshapes the quasiparticle bands but cannot produce satellites or
-lifetimes. Ref.~\cite{Wei2025} (Sec.~IV\,B) likewise neglects the first-order Hartree and Fock diagrams for
-this reason, and the Coulomb interaction is normal ordered. The consequences differ between the two samples:
-\begin{itemize}
-\item \textbf{TBG at neutrality.} The Hartree potential of the BM model vanishes at neutrality, while the Fock term
-would renormalise the flat bands. The correlation-only $\Sigma$ is the self-energy of the
-scheme of Ref.~\cite{Wei2025}; positions of quasiparticle peaks are those of the bare continuum bands dressed
-by $\Ree\Sigma_c$ only, which should be kept in mind when comparing with experiment.
-\item \textbf{Doped graphene.} The omitted $\Sigma^x$ is what enhances the Fermi velocity of
-graphene~\cite{Elias2011}. Without it the correlation part alone narrows the band
-($v^*/v_F\simeq0.92$ in notebook 02). Since $\Sigma^x$ is real, it leaves $\Imm\Sigma$ and hence the energy of
-the satellite structure unchanged, but it moves the quasiparticle peak by $\Sigma^x_{nn}(\bk)$ and thus changes
-the offset between the two. Quasiparticle velocities and peak--satellite offsets of doped graphene computed
-here are therefore correlation-only quantities; $\Sigma^x$ can be added to the Dyson equation as a static term
-when needed.
-\end{itemize}
+Only the correlation part is computed. The spectral density $S$ is that of $W$, and $V$ has no spectral weight for a
+static background, so the exchange term \eqref{eq:fock} is absent. $\Sigma^x$ is real and static. It shifts and reshapes
+the quasiparticle bands but cannot produce satellites or finite lifetimes. Ref.~\cite{Wei2025} (Sec.~IV\,B) likewise
+neglects the first-order Hartree and Fock diagrams, with a normal-ordered Coulomb interaction. The consequences differ
+between the two samples.
 
+For TBG at neutrality the Hartree potential of the BM model vanishes, while the Fock term would renormalise the flat
+bands. The correlation-only $\Sigma$ is therefore the self-energy of the scheme of Ref.~\cite{Wei2025}, and the
+quasiparticle peaks are the bare continuum bands dressed by $\Ree\Sigma_c$ only, which should be kept in mind when
+comparing with experiment.
+
+For doped graphene the omitted $\Sigma^x$ is what enhances the Fermi velocity~\cite{Kotov2012,Elias2011}. Without it the
+correlation part alone narrows the band ($v^*/v_F\simeq0.92$ in notebook 02). Since $\Sigma^x$ is real, it leaves
+$\Imm\Sigma$, and hence the energy of the satellite structure, unchanged. It does move the quasiparticle peak by
+$\Sigma^x_{nn}(\bk)$ and therefore changes the offset between peak and satellite. Quasiparticle velocities and
+peak--satellite offsets of doped graphene computed here are correlation-only quantities. $\Sigma^x$ can be added to the
+Dyson equation as a static term when needed.
+
+% ----------------------------------------------------------------------
 \subsection{Plasmon-pole form}
 
-Inserting $S\to\sum_nR_n\delta(\omega-\omega_n)$ in \cref{eq:sigma}:
+Inserting $S(\bq,\omega)\to\sum_pR_p(\bq)\,\delta(\omega-\omega_p(\bq))$ (\cref{sec:ppa}) in \cref{eq:sigma} gives
 \begin{equation}
-\Sigma^{\rm PPA}_{nn'}(\bk,\eps)=-\sum_{\bq}w_{\bq}\sum_{m,p}\sum_{ab}\rho^a_{nm}[\rho^b_{n'm}]^*R_{p,ab}(\bq)\,
+\Sigma^{\rm PPA}_{nn'}(\bk,\eps)=-\sum_{\bq}w_{\bq}\sum_{m,p}\sum_{ab}\rho^a_{nm}\bigl[\rho^b_{n'm}\bigr]^*R_{p,ab}(\bq)\,
 \mathcal D_m(\omega_p(\bq),\eps)
 \end{equation}
-(\code{compute\_self\_energy\_layer}, \code{compute\_self\_energy\_pybandstructure}). The full residue matrix is used;
-a rank-one factorisation $R_p\simeq\Phi_p\Phi_p^\dagger$ is a diagnostic only.
+(\code{compute\_self\_energy\_layer}, \code{compute\_self\_energy\_pybandstructure}), where $p$ labels the collective modes at
+$\bq$, $\omega_p(\bq)$ their energies and $R_p(\bq)$ their residue matrices, \cref{eq:residue}. The full residue matrix is
+used. A rank-one factorisation $R_p\simeq\Phi_p\Phi_p^\dagger$ is available as a diagnostic only. The plasmon-pole
+approximation~\cite{HybertsenLouie1986,GodbyNeeds1989} ignores the particle--hole continuum, which carries most of the weight
+of $S$ in the regimes studied here (\cref{sec:ppa}).
 
+% ----------------------------------------------------------------------
 \subsection{Fast route: tabulated resolvent kernels}
 \label{sec:kernel}
 
-In \cref{eq:sigma,eq:D} $\xi_m$ and $\eps$ appear in the resolvents only through $u=\xi_m-\eps$, while the
-populations split as $A^\pm=\nB(\omega)+\nF(\mp\xi_m)$. Therefore
+In \cref{eq:sigma,eq:D} the energies $\xi_m$ and $\eps$ appear in the denominators only through $u=\xi_m-\eps$, while the
+populations split as $N^\pm_m=\nB(\omega)+\nF(\mp\xi_m)$. Therefore
 \begin{equation}
 \int_0^{\omega_{\max}}\!\dd\omega\,S(\bq,\omega)\mathcal D_m(\omega,\eps)=\nF(-\xi_m)\,P_{\bq}(u)+\nF(\xi_m)\,M_{\bq}(u)+B^+_{\bq}(u)+B^-_{\bq}(u),
 \label{eq:kernel}
@@ -146,13 +627,14 @@ P_{\bq}(u)=\int\dd\omega\frac{S(\bq,\omega)}{\omega+u-\ii\eta_\Sigma},\quad
 M_{\bq}(u)=\int\dd\omega\frac{S(\bq,\omega)}{-\omega+u-\ii\eta_\Sigma},\quad
 B^\pm_{\bq}(u)=\int\dd\omega\frac{\nB(\omega)S(\bq,\omega)}{\pm\omega+u-\ii\eta_\Sigma}.
 \end{equation}
-These four matrix functions of one variable depend on $\bq$ only. They are tabulated once on a uniform $u$ grid
-of spacing $\eta_\Sigma/8$ (with the same trapezoidal rule in $\omega$) and linearly interpolated for every
-$(\bk,m,\eps)$ (\code{ResolventKernel}). This is an exact rewriting up to the interpolation error
-($\lesssim2\times10^{-4}$ relative in the tests), and makes the cost per external $\bk$ independent of $n_\omega$:
-for graphene it is $\sim300$ times faster than the direct contraction, which makes full twist maps cheap.
-At $T=0$ the Bose terms vanish since the $\omega$ grid starts above zero.
+These four matrix-valued functions of a single variable depend on $\bq$ but not on $\bk$, $m$ or $\eps$. They are tabulated
+once on a uniform $u$ grid of spacing $\eta_\Sigma/8$, with the same trapezoidal rule in $\omega$, and linearly interpolated
+for every $(\bk,m,\eps)$ (\code{ResolventKernel}). This is an exact rewriting up to the interpolation error
+($\lesssim2\times10^{-4}$ relative in the tests) and makes the cost per external $\bk$ independent of $n_\omega$. For graphene
+it is about 300 times faster than the direct contraction, which makes full twist maps cheap. At $T=0$ the Bose terms
+vanish because the $\omega$ grid starts above zero.
 
+% ----------------------------------------------------------------------
 \subsection{Numerical parameters and their roles}
 
 \begin{center}
@@ -161,12 +643,12 @@ At $T=0$ the Bose terms vanish since the $\omega$ grid starts above zero.
 \toprule
 symbol & code & role\\
 \midrule
-$\eta$ & \code{cfg.eta}, \code{TBGParams.eta} & broadening of $\chi^0$ and $V$ ($\omega+\ii\eta$); sets the width of undamped plasmons in $S$. TBG default: $2\hbar v^*|\bG_M|/N_s$ (mesh-tied, flat-band regime only)\\
-$\eta_\Sigma$ & \code{eta\_self} & $0^+$ of the resolvents in \cref{eq:D}; floors $\Imm\Sigma$ near $\eps=0$ (the Fermi-liquid $\eps^2$ law is recovered only for $\eps\gg\eta_\Sigma$)\\
-$\eta_{\rm qp}$ & \code{eta\_qp} & extrinsic width in the Dyson equation (finite junction, disorder); keeps the QP peak finite\\
-$\omega_{\max}$, $n_\omega$ & \code{omega\_grid} & frequency window of $S$; must contain the plasmon branches and the relevant continuum\\
-$q_{\max}$, $n_q$, $n_\vartheta$ & radial grid & graphene: $3k_F$, 96, 64 (convergence: $n_q$ is the slow one, $\sim1/n_q$)\\
-$N_s$, $n_b$ & \code{n\_sites}, \code{n\_bands} & TBG mesh and number of bands per side; memory of \code{densityL} $\propto 2(2n_b)^2N_s^4$\\
+$\eta$ & \code{cfg.eta}, \code{TBGParams.eta} & broadening of $\chi^0$ and $V$ ($\omega+\ii\eta$), sets the width of undamped plasmons in $S$. TBG default: $2\hbar v_{\rm BM}|\bG_M|/N_s$, with $v_{\rm BM}$ the flat-band velocity estimate of \cref{eq:vstar} (valid only in the flat-band regime)\\
+$\eta_\Sigma$ & \code{eta\_self} & finite value of the $0^+$ in \cref{eq:D}, floors $\Imm\Sigma$ near $\eps=0$ (the Fermi-liquid $\eps^2$ law is recovered only for $|\eps|\gg\eta_\Sigma$)\\
+$\eta_{\rm qp}$ & \code{eta\_qp} & extrinsic width in the Dyson equation (finite junction, disorder), keeps the quasiparticle peak finite\\
+$\omega_{\max}$, $n_\omega$ & \code{omega\_grid} & frequency window of $S$, must contain the plasmon branches and the relevant continuum\\
+$q_{\max}$, $n_q$, $n_\vartheta$ & radial grid & graphene: $3k_F$, 96, 64 (convergence is slowest in $n_q$, error $\sim1/n_q$)\\
+$N_s$, $n_b$ & \code{n\_sites}, \code{n\_bands} & TBG mesh and number of bands per side of neutrality; memory of \code{densityL} $\propto 2(2n_b)^2N_s^4$\\
 \bottomrule
 \end{tabularx}
 \end{center}

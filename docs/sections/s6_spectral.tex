@@ -41,7 +41,8 @@ $A$ is a Lorentzian of weight and width
 \begin{equation}
 Z=\bigl[1-\partial_\eps\Ree\Sigma_{nn}\bigr]^{-1}_{E^*},\qquad \Gamma=2Z\bigl(\eta_{\rm qp}-\Imm\Sigma_{nn}(E^*)\bigr)
 \end{equation}
-(\code{spectral.quasiparticle\_solution}). The peak does not sit at the bare band: $\Ree\Sigma$ displaces it, and
+(\code{spectral.quasiparticle\_solution}). The slope of $E^*_{n\bk}$ as a function of $|\bk|$ defines the renormalised
+(quasiparticle) velocity $v^*$ quoted for graphene. The peak does not sit at the bare band: $\Ree\Sigma$ displaces it, and
 the missing weight $1-Z$ is transferred to the incoherent part and to the satellites.
 
 \paragraph{Satellites.} Away from the quasiparticle pole, to first order in $\Sigma$ (Ref.~\cite{Wei2025}, Eq.~(34)),
@@ -49,15 +50,17 @@ the missing weight $1-Z$ is transferred to the incoherent part and to the satell
 A_{\lambda_1\lambda_2}(\bk,\eps)\simeq-\frac1\pi\frac{\Sigma''_{\lambda_1\lambda_2}(\bk,\eps)}{(\eps-\xi_{\lambda_1\bk})(\eps-\xi_{\lambda_2\bk})},
 \qquad \Sigma''=\frac{\Sigma-\Sigma^\dagger}{2\ii},
 \end{equation}
-so peaks of $-\Imm\Sigma$ produce satellites. From \cref{eq:sigma}, $-\Imm\Sigma$ is large where an electron at
+so peaks of $-\Imm\Sigma$ produce satellites~\cite{HedinLundqvist1970,AryasetiawanGunnarsson1998}. In doped graphene
+they are the plasmarons predicted in RPA-G$_0$W~\cite{Polini2008,HwangDasSarma2008} and observed in
+photoemission~\cite{Bostwick2010}. From \cref{eq:sigma}, $-\Imm\Sigma$ is large where an electron at
 $\eps$ can emit a boson: $\eps=\xi_{m\bk+\bq}+\omega$ with $S(\bq,\omega)$ large. A dispersionless mode of energy
 $\omega_0$ (the flat-band plasmon of TBG) therefore gives a satellite at $\eps\simeq\xi_{\rm VH}+\omega_0$ where the
 intermediate density of states peaks ($\xi_{\rm VH}$ the van Hove energy of the flat band), nearly independent of
 $\bk$. For a dispersive mode (the $\sqrt q$ plasmon of graphene) the satellite sits at $\eps=\xi_{\bk-\bq}+\omega_{\bq}$
-summed over $\bq$; since $\xi_{\bk-\bq}\ne\xi_{\bk}$, its offset from the quasiparticle peak is not the plasmon
-energy at any single $\bq$; how to estimate it from the plasmon dispersion is shown in \cref{sec:edge}. For one-boson
+summed over $\bq$. Since $\xi_{\bk-\bq}\ne\xi_{\bk}$, its offset from the quasiparticle peak is not the plasmon
+energy at any single $\bq$. How to estimate it from the plasmon dispersion is shown in \cref{sec:edge}. For one-boson
 emission the satellite lies on the side of the quasiparticle peak away from $E_F$ (above it for empty states,
 below it for occupied ones).
 
-\paragraph{Fermi-liquid region.} At $\eps\to0$, $-\Imm\Sigma\propto\eps^2$; on a numerical grid this is floored
+\paragraph{Fermi-liquid region.} At $\eps\to0$, $-\Imm\Sigma\propto\eps^2$ (\cref{sec:sigma_physics}). On a numerical grid this is floored
 by $\eta_\Sigma$ and by the finite $q$ mesh, so the region $|\eps|\lesssim20\eta_\Sigma$ is not physical.

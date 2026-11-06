@@ -3,6 +3,11 @@
 \label{sec:electrostatics}
 % ======================================================================
 
+The kernel $V_{\ell m}(q,\omega)$ defined in this section is the interaction energy of two electrons placed on sheets $\ell$
+and $m$, as a function of their in-plane wavevector. It is the quantity that enters the interaction Hamiltonian
+\eqref{eq:Hint}. It is obtained by solving Poisson's equation in the stratified medium, in the spirit of the
+quasi-static treatments of double layers and of van der Waals heterostructures~\cite{Profumo2012,Andersen2015}.
+
 \subsection{Geometry}
 
 $N$ sheets $\ell=0,\dots,N-1$ sit at heights $z_0>z_1>\dots>z_{N-1}$ and divide space into $N+1$ regions
@@ -52,7 +57,7 @@ displacement on the two faces:
 \varepsilon_z\phi'(0^+)=Y\bigl[\Phi_a\csch\kappa d-\Phi_b\coth\kappa d\bigr].
 \label{eq:spacer}
 \end{equation}
-For a half-space above sheet $0$, $\phi=\Phi_0e^{-\kappa(z-z_0)}$ and $\varepsilon_z\phi'=-Y_0\Phi_0$; with a
+For a half-space above sheet $0$, $\phi=\Phi_0e^{-\kappa(z-z_0)}$ and $\varepsilon_z\phi'=-Y_0\Phi_0$. With a
 grounded gate at distance $d_{\rm t}$, $\phi=\Phi_0\sinh\kappa(z_{\rm g}-z)/\sinh\kappa d_{\rm t}$ and
 $\varepsilon_z\phi'=-Y_0\coth(\kappa d_{\rm t})\,\Phi_0$. A gate therefore replaces the boundary admittance
 $Y\to Y\coth(\kappa d_{\rm g})$, which tends to $Y$ for $d_{\rm g}\to\infty$. A slab
@@ -75,31 +80,33 @@ the regions above (region $\ell$) and below (region $\ell+1$) sheet $\ell$:
 -Y_\ell\csch(\kappa_\ell d_{\ell-1})\,\Phi_{\ell-1}
 -Y_{\ell+1}\csch(\kappa_{\ell+1}d_\ell)\,\Phi_{\ell+1}=4\pi\sigma_\ell ,
 \end{equation}
-with the outermost terms replaced by the boundary admittances ($Y_0$, $Y_0\coth\kappa_0d_{\rm t}$ or
-$Y_{\rm eff}$ on top; $Y_N$ or $Y_N\coth\kappa_Nd_{\rm b}$ at the bottom). This is
-$A(q,\omega)\Phi=4\pi\sigma$ with a tridiagonal $A$ (\code{build\_tridiagonal\_A\_diagonals}):
+with the outermost terms replaced by the boundary admittances $Y_{\rm top}$ and $Y_{\rm bot}$: $Y_{\rm top}$ is $Y_0$, $Y_0\coth\kappa_0d_{\rm t}$ or
+$Y_{\rm eff}$, and $Y_{\rm bot}$ is $Y_N$ or $Y_N\coth\kappa_Nd_{\rm b}$. Here $\Phi_\ell$ and $\sigma_\ell$ are the
+Fourier components of the potential and of the charge density on sheet $\ell$. The system is
+$\mathsf A(q,\omega)\Phi=4\pi\sigma$ with a tridiagonal admittance matrix $\mathsf A$ (called \code{A} in
+\code{build\_tridiagonal\_A\_diagonals}):
 \begin{align}
-A_{00}&=Y_{\rm top}+Y_1\coth\kappa_1d_0, &
-A_{N-1,N-1}&=Y_{N-1}\coth\kappa_{N-1}d_{N-2}+Y_{\rm bot},\nonumber\\
-A_{\ell\ell}&=Y_\ell\coth\kappa_\ell d_{\ell-1}+Y_{\ell+1}\coth\kappa_{\ell+1}d_\ell, &&\nonumber\\
-A_{\ell,\ell-1}&=-Y_\ell\csch\kappa_\ell d_{\ell-1}, &
-A_{\ell,\ell+1}&=-Y_{\ell+1}\csch\kappa_{\ell+1}d_\ell .
+\mathsf A_{00}&=Y_{\rm top}+Y_1\coth\kappa_1d_0, &
+\mathsf A_{N-1,N-1}&=Y_{N-1}\coth\kappa_{N-1}d_{N-2}+Y_{\rm bot},\nonumber\\
+\mathsf A_{\ell\ell}&=Y_\ell\coth\kappa_\ell d_{\ell-1}+Y_{\ell+1}\coth\kappa_{\ell+1}d_\ell, &&\nonumber\\
+\mathsf A_{\ell,\ell-1}&=-Y_\ell\csch\kappa_\ell d_{\ell-1}, &
+\mathsf A_{\ell,\ell+1}&=-Y_{\ell+1}\csch\kappa_{\ell+1}d_\ell .
 \label{eq:Amatrix}
 \end{align}
 A unit point charge $e$ on sheet $m$ has $\sigma_\ell(\bq)=e\,\delta_{\ell m}$, and the energy of a second
 charge $e$ on sheet $\ell$ is $e\Phi_\ell$. The layer-resolved Coulomb kernel is therefore
 \begin{equation}
-\boxed{V_{\ell m}(q,\omega)=4\pi e^2\,[A^{-1}(q,\omega)]_{\ell m}}
+\boxed{V_{\ell m}(q,\omega)=4\pi e^2\,[\mathsf A^{-1}(q,\omega)]_{\ell m}}
 \qquad[\text{eV\,nm}^2]
 \label{eq:V}
 \end{equation}
-(\code{LayerCoulomb.coulomb\_matrix}). $A$ is inverted with a Thomas LU factorisation and $\coth$, $\csch$
+(\code{LayerCoulomb.coulomb\_matrix}). $\mathsf A$ is inverted with a Thomas LU factorisation and $\coth$, $\csch$
 are evaluated in the overflow-safe form $\coth z=(1+u)/(1-u)$, $\csch z=2e^{-z}/(1-u)$, $u=e^{-2z}$, with
 $1-u=-\mathrm{expm1}(-2z)$.
 
-\paragraph{Closed forms (tested).} A single sheet in a uniform medium has $A=2\varepsilon q$, i.e.\
-$V=2\pi e^2/(\varepsilon q)$; with gates at $\pm d$, $V=\frac{2\pi e^2}{\varepsilon q}\tanh qd$; with one gate,
-$V=\frac{2\pi e^2}{\varepsilon q}(1-e^{-2qd})$. Two sheets in a uniform uniaxial medium:
+\paragraph{Closed forms (tested).} A single sheet in a uniform medium has $\mathsf A=2\varepsilon q$, i.e.\
+$V=2\pi e^2/(\varepsilon q)$. With gates at $\pm d$ it becomes $V=\frac{2\pi e^2}{\varepsilon q}\tanh qd$, and with one gate at
+distance $d$, $V=\frac{2\pi e^2}{\varepsilon q}(1-e^{-2qd})$. Two sheets in a uniform uniaxial medium:
 \begin{equation}
 V_{11}=V_{22}=\frac{2\pi e^2}{\bar\varepsilon q},\qquad V_{12}=V_{11}\,e^{-\kappa d},
 \qquad \bar\varepsilon=\sqrt{\varepsilon_\parallel\varepsilon_z},\quad\kappa=q\sqrt{\varepsilon_\parallel/\varepsilon_z}.
@@ -120,17 +127,19 @@ $d\ll d_{\rm g}$: gating raises the \emph{relative} weight of the acoustic chann
 
 \subsection{Dispersive dielectrics and passivity}
 
-hBN is modelled with one Lorentz oscillator per axis,
+hBN is modelled with one Lorentz oscillator per axis, the standard description of its two optical-phonon
+bands~\cite{Geick1966,Caldwell2014},
 \begin{equation}
 \varepsilon_\alpha(\omega)=\varepsilon_{\infty,\alpha}+\frac{\varepsilon_{0,\alpha}-\varepsilon_{\infty,\alpha}}{1-\omega^2/\omega_{T,\alpha}^2-\ii\gamma_\alpha\omega/\omega_{T,\alpha}^2},
 \end{equation}
-with $(\varepsilon_0,\varepsilon_\infty,\omega_T,\gamma)=(6.41,4.53,168,0.82)$ (in-plane) and
-$(3.0,2.5,94.2,0.23)$ (out-of-plane), energies in meV (\code{dielectrics.HBNModel}). Between $\omega_T$ and
+where $\varepsilon_{0}$ and $\varepsilon_\infty$ are the static and high-frequency constants, $\omega_T$ the transverse-optical
+phonon energy and $\gamma$ its damping, with $(\varepsilon_0,\varepsilon_\infty,\omega_T,\gamma)=(6.41,4.53,168,0.82)$ (in-plane) and
+$(3.0,2.5,94.2,0.23)$ (out-of-plane), energies in meV (the values of \code{dielectrics.HBNModel}). Between $\omega_T$ and
 $\omega_L=\omega_T\sqrt{\varepsilon_0/\varepsilon_\infty}$ (the Reststrahlen bands, 94--103 meV and
 168--200 meV) $\varepsilon_\parallel\varepsilon_z<0$ and $\kappa$ is almost imaginary: the substrate carries
 hyperbolic phonon polaritons and $V$ acquires a large dissipative part. For the retarded kernel of a passive
 medium the anti-Hermitian part must be negative semidefinite, $-(V-V^\dagger)/2\ii\succeq0$. The branch of
 $\kappa_j(\omega)$ is the decaying one ($\Ree\kappa>0$) at the first frequency of a sweep and is then
-continued without jumps (\code{compute\_kappa\_Y\_tracked}); in the examples of notebook 01 the continued
+continued without jumps (\code{compute\_kappa\_Y\_tracked}). In the examples of notebook 01 the continued
 and the principal branches coincide and both are passive. Static values ($\omega\to0$) are used unless the
 phonon range is of interest (all calculations in notebooks 02--05).
